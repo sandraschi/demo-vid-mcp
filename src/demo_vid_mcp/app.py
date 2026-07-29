@@ -91,6 +91,19 @@ async def api_generate(body: dict):
     return result
 
 
+@app.post("/api/script-draft")
+async def api_script_draft(body: dict):
+    """Draft a narration script for a repo (calls demo_vid_script_draft tool)."""
+
+    from demo_vid_mcp.pipeline.script import default_script
+
+    repo = body.get("repo", "")
+    if not repo:
+        return {"success": False, "error": "repo required"}
+    script = default_script(repo)
+    return {"success": True, "script": script, "message": f"Drafted script for {repo}"}
+
+
 @app.get("/api/repos")
 async def list_repos():
     """Return categorized repos available for demo video generation."""

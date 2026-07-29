@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Send } from "lucide-react";
+import { Send, FileText } from "lucide-react";
 
 interface RepoCategory { name: string; repos: string[]; }
 
@@ -9,6 +9,7 @@ export default function Generate() {
   const [selectedRepo, setSelectedRepo] = useState("");
   const [script, setScript] = useState("");
   const [busy, setBusy] = useState(false);
+  const [drafting, setDrafting] = useState(false);
   const [result, setResult] = useState<string | null>(null);
 
   useEffect(() => {
@@ -17,15 +18,42 @@ export default function Generate() {
 
   const currentRepos = categories.find(c => c.name === selectedCat)?.repos || [];
 
+  const handleDraft = useCallback(async () => {
+    if (!selectedRepo) return;
+    setDrafting(true);
+    try {
+      const r = await fetch("/api/script-draft", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ repo: selectedRepo }),
+      });
+      const d = await r.json();
+      if (d.success && d.script) {
+        setScript(JSON.stringify(d.script, null, 2));
+      } else {
+        setScript(`# Error: ${d.error || "failed to draft"}`);
+      }
+    } catch (e) {
+      setScript(`# Error: ${e}`);
+    } finally {
+      setDrafting(false);
+    }
+  }, [selectedRepo]);
+
   const handleGenerate = useCallback(async () => {
     if (!selectedRepo) return;
     setBusy(true);
     setResult(null);
     try {
+      const body: any = { repo: selectedRepo };
+      const trimmed = script.trim();
+      if (trimmed && (trimmed.startsWith("{") || trimmed.startsWith("title:"))) {
+        body.script_yaml = trimmed;
+      }
       const r = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ repo: selectedRepo, script_yaml: script || null }),
+        body: JSON.stringify(body),
       });
       const d = await r.json();
       setResult(JSON.stringify(d, null, 2));
@@ -71,13 +99,23 @@ export default function Generate() {
         </div>
 
         <div>
-          <label className="block text-sm text-zinc-400 mb-1">Script YAML (optional)</label>
+          <div className="flex items-center justify-between mb-1">
+            <label className="block text-sm text-zinc-400">Script YAML (optional)</label>
+            <button
+              onClick={handleDraft}
+              disabled={!selectedRepo || drafting}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs text-zinc-400 hover:text-white hover:bg-zinc-800 disabled:opacity-50 cursor-pointer border border-zinc-700"
+            >
+              <FileText className="h-3.5 w-3.5" />
+              {drafting ? "Drafting..." : "Draft script"}
+            </button>
+          </div>
           <textarea
             value={script}
             onChange={e => setScript(e.target.value)}
             rows={8}
             className="w-full bg-zinc-800 text-zinc-200 border border-zinc-700 rounded-md px-3 py-2 text-sm font-mono"
-            placeholder="title: Demo..."
+            placeholder="Click 'Draft script' or paste YAML manually"
           />
         </div>
 
