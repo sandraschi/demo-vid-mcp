@@ -22,7 +22,7 @@ async def record(script: dict, output_dir: str) -> dict:
     """
     steps = script.get("steps", [])
 
-    script_dir = Path(__file__).resolve().parents[2] / "scripts"
+    script_dir = Path(__file__).resolve().parents[3] / "scripts"
     capture_js = script_dir / "playwright-capture.js"
     if not capture_js.exists():
         return {"success": False, "error": f"Capture script not found at {capture_js}"}
