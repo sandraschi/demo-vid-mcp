@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Play, RotateCcw, Code } from "lucide-react";
+import { Play, RotateCcw, Code, Trash2 } from "lucide-react";
 
 interface DepotEntry {
   repo: string; name: string; video_path: string;
@@ -32,7 +32,15 @@ export default function Depot() {
     } catch { /* ignore */ }
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { load();   }, [load]);
+
+  const handleDelete = useCallback(async (repo: string) => {
+    if (!confirm(`Delete all videos for ${repo}?`)) return;
+    try {
+      await fetch(`/api/videos/${encodeURIComponent(repo)}`, { method: "DELETE" });
+      load();
+    } catch { /* ignore */ }
+  }, [load]);
 
   const grouped = entries.reduce((acc, e) => {
     const cat = Object.entries(CATEGORIES).find(([, repos]) => repos.includes(e.repo))?.[0] || "Other";
@@ -121,6 +129,13 @@ export default function Depot() {
                         title="Rebuild"
                       >
                         <RotateCcw className={`h-3.5 w-3.5 ${regenBusy === v.repo ? "animate-spin" : ""}`} />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(v.repo)}
+                        className="p-1.5 rounded text-zinc-400 hover:text-red-400 hover:bg-zinc-700 cursor-pointer"
+                        title="Delete"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
                       </button>
                     </div>
                   </div>

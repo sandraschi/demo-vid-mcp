@@ -253,3 +253,27 @@ async def logs_get(limit: int = 50, level: str = "INFO", search: str = ""):
         and (not search or search.lower() in e["message"].lower())
     ]
     return {"logs": filtered[-limit:], "total": len(filtered)}
+
+
+@app.delete("/api/videos/{repo}")
+async def delete_repo_videos(repo: str):
+    """Delete all videos and scripts for a repo from the depot."""
+    repo_dir = Path(config.data_dir) / "videos" / repo
+    if not repo_dir.exists():
+        return {"success": False, "error": f"No videos found for {repo}"}
+    import shutil
+    shutil.rmtree(repo_dir, ignore_errors=True)
+    return {"success": True, "message": f"Deleted all videos for {repo}"}
+
+
+@app.delete("/api/videos/{repo}/{name}")
+async def delete_video(repo: str, name: str):
+    """Delete a single video and its script from the depot."""
+    repo_dir = Path(config.data_dir) / "videos" / repo
+    (repo_dir / f"{name}.mp4").unlink(missing_ok=True)
+    (repo_dir / "narration.yaml").unlink(missing_ok=True)
+    remaining = list(repo_dir.glob("*.mp4"))
+    if not remaining:
+        import shutil
+        shutil.rmtree(repo_dir, ignore_errors=True)
+    return {"success": True, "message": f"Deleted {name} for {repo}"}

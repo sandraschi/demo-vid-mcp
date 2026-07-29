@@ -15,6 +15,7 @@ export default defineConfig({
     proxy: {
       "/api": { target: "http://127.0.0.1:11134", changeOrigin: true },
       "/mcp": { target: "http://127.0.0.1:11134", changeOrigin: true },
+      "/videos": { target: "http://127.0.0.1:11134", changeOrigin: true },
     },
   },
 });
