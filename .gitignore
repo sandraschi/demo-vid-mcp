@@ -53,3 +53,7 @@ logs/
 
 # Rust / Tauri (rust-analyzer may emit target/)
 target/
+
+# Temporary test output
+test-output/
+test-capture/
