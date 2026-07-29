@@ -262,6 +262,7 @@ async def delete_repo_videos(repo: str):
     if not repo_dir.exists():
         return {"success": False, "error": f"No videos found for {repo}"}
     import shutil
+
     shutil.rmtree(repo_dir, ignore_errors=True)
     return {"success": True, "message": f"Deleted all videos for {repo}"}
 
@@ -275,6 +276,7 @@ async def delete_video(repo: str, name: str):
     remaining = list(repo_dir.glob("*.mp4"))
     if not remaining:
         import shutil
+
         shutil.rmtree(repo_dir, ignore_errors=True)
     return {"success": True, "message": f"Deleted {name} for {repo}"}
 
@@ -303,9 +305,14 @@ async def insert_into_repo(repo: str):
             preview_lines.append(f"![Demo video](docs/screenshots/{v.name})\n")
         preview_block = "\n" + "".join(preview_lines) + "\n"
         if "## Preview" in text:
-            text = _re.sub(r"## Preview.*?(?=\n## |\Z)", preview_block.strip(), text, flags=_re.DOTALL)
+            text = _re.sub(
+                r"## Preview.*?(?=\n## |\Z)", preview_block.strip(), text, flags=_re.DOTALL
+            )
         else:
             text = text.replace("# ", "# \n" + preview_block, 1)
         readme_path.write_text(text, encoding="utf-8")
-        return {"success": True, "message": f"Inserted {len(mp4_files)} video(s) into {repo} README"}
+        return {
+            "success": True,
+            "message": f"Inserted {len(mp4_files)} video(s) into {repo} README",
+        }
     return {"success": True, "message": f"Copied {len(mp4_files)} video(s) to {repo} (no README)"}

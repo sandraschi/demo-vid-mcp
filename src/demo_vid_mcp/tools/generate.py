@@ -22,18 +22,29 @@ from demo_vid_mcp.server import mcp
 
 logger = logging.getLogger("demo-vid-mcp.tools.generate")
 
-_KNOWN_PORTS = {
-    "chitchat": 10975,
-    "arxiv-mcp": 10771,
-    "calibre-mcp": 10721,
-    "blender-mcp": 10848,
-    "email-mcp": 10812,
-    "godot-mcp": 10992,
-    "gimp-mcp": 10772,
-    "resonite-mcp": 10978,
-    "vroidstudio-mcp": 10880,
-    "llm-txt-mcp": 10836,
-}
+
+def _load_frontend_ports() -> dict[str, int]:
+    """Read frontend ports from WEBAPP_PORTS.md."""
+    ports_path = config.repos_root / "mcp-central-docs" / "operations" / "WEBAPP_PORTS.md"
+    if not ports_path.exists():
+        logger.warning("WEBAPP_PORTS.md not found at %s", ports_path)
+        return {"chitchat": 10975}
+    result = {}
+    import re
+
+    for line in ports_path.read_text(encoding="utf-8").splitlines():
+        m = re.match(
+            r"\|\s*(\d+)\s*\|\s*([\w-]+(?:-mcp|_mcp)?)\s*\|\s*(.*\b(Frontend|frontend|dashboard frontend)\b.*)",
+            line,
+        )
+        if m:
+            repo, port = m.group(2), int(m.group(1))
+            if repo not in result:
+                result[repo] = port
+    return result or {"chitchat": 10975}
+
+
+_FRONTEND_PORTS = _load_frontend_ports()
 
 
 async def _ensure_target_running(repo: str, base_url: str) -> bool:
@@ -136,7 +147,7 @@ async def _ensure_target_running(repo: str, base_url: str) -> bool:
 def _resolve_base_url(repo: str, base_url: str | None) -> str:
     if base_url:
         return base_url.rstrip("/")
-    port = _KNOWN_PORTS.get(repo, 10975)
+    port = _FRONTEND_PORTS.get(repo, 10975)
     return f"http://127.0.0.1:{port}"
 
 

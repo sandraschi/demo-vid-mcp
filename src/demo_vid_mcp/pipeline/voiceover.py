@@ -47,7 +47,9 @@ async def generate_voiceover(script: dict, output_dir: str, speech_mcp_url: str 
                     seg_path.write_bytes(r.content)
                     audio_paths.append(seg_path)
                 else:
-                    logger.warning("TTS fail seg %d: HTTP %d, %d bytes", i, r.status_code, len(r.content))
+                    logger.warning(
+                        "TTS fail seg %d: HTTP %d, %d bytes", i, r.status_code, len(r.content)
+                    )
             except httpx.RequestError as e:
                 logger.warning("TTS request failed for segment %d: %s", i, e)
 
