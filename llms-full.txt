@@ -2,45 +2,62 @@
 
 ## Architecture
 
-demo-vid-mcp orchestrates fleet services to produce repo intro videos. Pipeline stages:
-- Script parsing (YAML narration)
-- Playwright recording (.webm)
-- voiceover via speech-mcp TTS (.wav)
-- Composition via FFmpeg (.mp4)
-- Optional: blender-mcp 3D titles, gimp-mcp art, davinci-resolve-mcp composition
+demo-vid-mcp is a conductor service that orchestrates the fleet to produce repo intro videos. Pipeline stages:
+
+1. **Script** — generate or validate YAML narration script (auto-generated from repo README)
+2. **Auto-start** — start target repo's backend + frontend (Vite)
+3. **Voiceover** — speech-mcp TTS per `say:` segment → .wav
+4. **Record** — Playwright headless Chromium, native .webm recording
+5. **Content gate** — verify page has actual HTML, not blank/error
+6. **Compose** — FFmpeg: video + optional audio + title card → .mp4
+7. **Depot** — store in data/videos/ with narration script for rebuild
 
 ## Tools
 
-### demo_vid_generate(repo, script_yaml?)
-Full pipeline: validate script, voiceover, record, compose.
+### demo_vid_generate(repo, script_yaml?, base_url?)
+Full pipeline. auto-starts target, records, voiceovers, composes.
 
 ### demo_vid_list(repo?)
-List produced videos. Filters by repo when given.
+List produced videos. Optional repo filter.
 
 ### demo_vid_refine(video_name, feedback)
 Re-generate with timing/narration adjustments.
 
 ### demo_vid_script_draft(repo)
-Draft default narration YAML for a repo.
+Generate narration script from README + webapp page scan.
 
 ### demo_vid_script_validate(script_yaml)
-Validate narration script structure.
+Validate YAML structure and timing.
+
+### demo_vid_help
+List all tools.
+
+## Narration script format
+
+```yaml
+title: "Demo of chitchat"
+duration_target: 45
+voice: "heart"
+steps:
+  - action: goto
+    url: http://127.0.0.1:10975/
+    wait: 3
+    say: "Chitchat gives Claude 64 conversation starters."
+  - action: click
+    target: "[data-testid='tab-topics']"
+    wait: 2
+    say: "Browse by category."
+  - action: end
+    say: "Open source."
+```
 
 ## Configuration
 
-See docs/CONFIGURATION.md.
-
-## Fleet Services
-
-| Service | URL env var | Fallback |
-|---------|-------------|----------|
-| speech-mcp | SPEECH_MCP_URL | Required — no fallback |
-| blender-mcp | BLENDER_MCP_URL | gimp-mcp → plain text |
-| gimp-mcp | GIMP_MCP_URL | plain text title |
-| davinci-resolve-mcp | DAVINCI_RESOLVE_MCP_URL | FFmpeg composition |
-| vfx-mcp | VFX_MCP_URL | No effects |
-| stems-mcp | STEMS_MCP_URL | No music |
-| sfx-mcp | SFX_MCP_URL | No sound effects |
+| Var | Default | Description |
+|-----|---------|-------------|
+| HOST | 127.0.0.1 | Backend bind address |
+| PORT | 11134 | Backend port |
+| SPEECH_MCP_URL | http://127.0.0.1:10909 | speech-mcp TTS endpoint |
 
 ## Ports
 
