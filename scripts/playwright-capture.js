@@ -30,7 +30,7 @@ async function main() {
     try {
       switch (step.action) {
         case "goto": {
-          const resp = await page.goto(step.url, { waitUntil: "networkidle", timeout: 15000 });
+          const resp = await page.goto(step.url, { waitUntil: "load", timeout: 15000 });
           if (resp && resp.status() >= 400) {
             console.error(`HTTP ${resp.status()} at ${step.url} — aborting`);
             process.exit(1);

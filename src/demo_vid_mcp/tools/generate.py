@@ -37,6 +37,7 @@ _KNOWN_PORTS = {
     "codecad-mcp": 11083,
     "comfyops-mcp": 11088,
     "learnbot-mcp": 11101,
+    "llm-txt-mcp": 10836,
 }
 
 
