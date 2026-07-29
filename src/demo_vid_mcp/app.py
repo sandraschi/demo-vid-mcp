@@ -316,3 +316,87 @@ async def insert_into_repo(repo: str):
             "message": f"Inserted {len(mp4_files)} video(s) into {repo} README",
         }
     return {"success": True, "message": f"Copied {len(mp4_files)} video(s) to {repo} (no README)"}
+
+
+@app.get("/api/skills")
+async def list_skills():
+    """Return available skills (preprompts) for the chat page."""
+    return {"skills": [
+        {"name": "demo-vid-mcp", "description": "Expert in generating fleet demo videos with Playwright, speech-mcp, and FFmpeg."},
+    ]}
+
+
+@app.get("/api/skills/demo-vid-mcp")
+async def get_skill():
+    return {"content": "# demo-vid-mcp skill\n\nYou are a demo video generation expert.\n\n## Tools\n- demo_vid_generate: Full pipeline\n- demo_vid_script_draft: Generate narration scripts\n- demo_vid_script_validate: Validate scripts\n\n## Workflow\n1. Draft a script with demo_vid_script_draft\n2. Validate with demo_vid_script_validate\n3. Generate the video with demo_vid_generate\n4. Review in the Depot page\n5. Insert into the repo README"}
+
+
+@app.post("/api/llm/chat")
+async def llm_chat(body: dict):
+    """Proxy chat requests to the configured LLM provider."""
+    provider = body.get("provider", "ollama")
+    model = body.get("model", "gemma4:2b")
+    messages = body.get("messages", [])
+
+    provider_configs = {
+        "ollama": {"base": "http://127.0.0.1:11434", "path": "/api/chat"},
+        "lmstudio": {"base": "http://127.0.0.1:1234", "path": "/v1/chat/completions"},
+    }
+    cfg = provider_configs.get(provider.lower(), provider_configs["ollama"])
+
+    try:
+        async with httpx.AsyncClient(timeout=60) as client:
+            if provider.lower() == "ollama":
+                payload = {"model": model, "messages": messages, "stream": True}
+                r = await client.post(f"{cfg['base']}{cfg['path']}", json=payload)
+                r.raise_for_status()
+                lines = r.text.strip().splitlines()
+                full_content = ""
+                for line in lines:
+                    if line.startswith("data: "):
+                        import json
+                        chunk = json.loads(line[6:])
+                        if "message" in chunk and "content" in chunk["message"]:
+                            full_content += chunk["message"]["content"]
+                    elif line.startswith("{"):
+                        import json
+                        chunk = json.loads(line)
+                        if "message" in chunk and "content" in chunk["message"]:
+                            full_content += chunk["message"]["content"]
+                return {"success": True, "message": {"role": "assistant", "content": full_content}}
+            else:
+                payload = {"model": model, "messages": messages}
+                r = await client.post(f"{cfg['base']}{cfg['path']}", json=payload)
+                r.raise_for_status()
+                data = r.json()
+                content = data.get("choices", [{}])[0].get("message", {}).get("content", "")
+                return {"success": True, "message": {"role": "assistant", "content": content}}
+    except httpx.ConnectError:
+        return {"success": False, "error": f"Provider {provider} not reachable on {cfg['base']}",
+                "suggestions": [f"Start {provider}: ollama serve", "Check the provider port"]}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+
+@app.get("/api/llm/discover")
+async def llm_discover():
+    """Probe common LLM providers and return detected ones with available models."""
+    providers = []
+    probe_configs = [
+        {"name": "Ollama", "port": 11434, "path": "/api/tags", "model_path": "/api/tags", "model_key": "models", "model_name_key": "name"},
+        {"name": "LM Studio", "port": 1234, "path": "/v1/models", "model_path": "/v1/models", "model_key": "data", "model_name_key": "id"},
+    ]
+    for cfg in probe_configs:
+        try:
+            async with httpx.AsyncClient(timeout=2) as client:
+                r = await client.get(f"http://127.0.0.1:{cfg['port']}{cfg['path']}")
+                if r.status_code == 200:
+                    data = r.json()
+                    models_data = data.get(cfg["model_key"], []) if cfg["model_key"] else []
+                    models = [m.get(cfg["model_name_key"], str(m)) for m in models_data] if isinstance(models_data, list) else []
+                    providers.append({"name": cfg["name"], "port": cfg["port"], "detected": True, "models": models})
+                else:
+                    providers.append({"name": cfg["name"], "port": cfg["port"], "detected": False})
+        except (httpx.ConnectError, httpx.TimeoutException):
+            providers.append({"name": cfg["name"], "port": cfg["port"], "detected": False})
+    return {"providers": providers}
