@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Play, RotateCcw, Code, Trash2 } from "lucide-react";
+import { Play, RotateCcw, Code, Trash2, FileDown } from "lucide-react";
 
 interface DepotEntry {
   repo: string; name: string; video_path: string;
@@ -33,6 +33,15 @@ export default function Depot() {
   }, []);
 
   useEffect(() => { load();   }, [load]);
+
+  const handleInsert = useCallback(async (repo: string) => {
+    try {
+      const r = await fetch(`/api/videos/${encodeURIComponent(repo)}/insert`, { method: "POST" });
+      const d = await r.json();
+      setRegenResult(d.message || "Inserted");
+      load();
+    } catch { /* ignore */ }
+  }, [load]);
 
   const handleDelete = useCallback(async (repo: string) => {
     if (!confirm(`Delete all videos for ${repo}?`)) return;
@@ -129,6 +138,13 @@ export default function Depot() {
                         title="Rebuild"
                       >
                         <RotateCcw className={`h-3.5 w-3.5 ${regenBusy === v.repo ? "animate-spin" : ""}`} />
+                      </button>
+                      <button
+                        onClick={() => handleInsert(v.repo)}
+                        className="p-1.5 rounded text-zinc-400 hover:text-green-400 hover:bg-zinc-700 cursor-pointer"
+                        title="Insert into repo README"
+                      >
+                        <FileDown className="h-3.5 w-3.5" />
                       </button>
                       <button
                         onClick={() => handleDelete(v.repo)}

@@ -277,3 +277,35 @@ async def delete_video(repo: str, name: str):
         import shutil
         shutil.rmtree(repo_dir, ignore_errors=True)
     return {"success": True, "message": f"Deleted {name} for {repo}"}
+
+
+@app.post("/api/videos/{repo}/insert")
+async def insert_into_repo(repo: str):
+    """Copy video into target repo's docs/screenshots/ and add README link."""
+    import re as _re
+    import shutil
+
+    repo_vid_dir = Path(config.data_dir) / "videos" / repo
+    mp4_files = list(repo_vid_dir.glob("*.mp4"))
+    if not mp4_files:
+        return {"success": False, "error": f"No video found for {repo}"}
+
+    target_dir = config.repos_root / repo / "docs" / "screenshots"
+    target_dir.mkdir(parents=True, exist_ok=True)
+    for v in mp4_files:
+        shutil.copy2(v, target_dir / v.name)
+
+    readme_path = config.repos_root / repo / "README.md"
+    if readme_path.exists():
+        text = readme_path.read_text(encoding="utf-8")
+        preview_lines = ["## Preview\n"]
+        for v in mp4_files:
+            preview_lines.append(f"![Demo video](docs/screenshots/{v.name})\n")
+        preview_block = "\n" + "".join(preview_lines) + "\n"
+        if "## Preview" in text:
+            text = _re.sub(r"## Preview.*?(?=\n## |\Z)", preview_block.strip(), text, flags=_re.DOTALL)
+        else:
+            text = text.replace("# ", "# \n" + preview_block, 1)
+        readme_path.write_text(text, encoding="utf-8")
+        return {"success": True, "message": f"Inserted {len(mp4_files)} video(s) into {repo} README"}
+    return {"success": True, "message": f"Copied {len(mp4_files)} video(s) to {repo} (no README)"}
