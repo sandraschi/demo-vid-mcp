@@ -61,35 +61,114 @@ async def list_repos():
         "categories": [
             {
                 "name": "Research & Knowledge",
-                "repos": ["arxiv-mcp", "calibre-mcp", "llm-txt-mcp", "notebooklm-fleet-mcp", "readly-mcp", "tvtropes-mcp"],
+                "repos": [
+                    "arxiv-mcp",
+                    "calibre-mcp",
+                    "llm-txt-mcp",
+                    "notebooklm-fleet-mcp",
+                    "readly-mcp",
+                    "tvtropes-mcp",
+                ],
             },
             {
                 "name": "Media & Creativity",
-                "repos": ["blender-mcp", "gimp-mcp", "inkscape-mcp", "davinci-resolve-mcp", "vroidstudio-mcp", "resonite-mcp", "godot-mcp", "unity3d-mcp", "comfyops-mcp", "suno-mcp", "songgeneration-mcp", "audiotool-nexus-mcp", "virtualdj-mcp", "reaper-mcp", "obs-mcp", "butterchurn-mcp"],
+                "repos": [
+                    "blender-mcp",
+                    "gimp-mcp",
+                    "inkscape-mcp",
+                    "davinci-resolve-mcp",
+                    "vroidstudio-mcp",
+                    "resonite-mcp",
+                    "godot-mcp",
+                    "unity3d-mcp",
+                    "comfyops-mcp",
+                    "suno-mcp",
+                    "songgeneration-mcp",
+                    "audiotool-nexus-mcp",
+                    "virtualdj-mcp",
+                    "reaper-mcp",
+                    "obs-mcp",
+                    "butterchurn-mcp",
+                ],
             },
             {
                 "name": "Communication",
-                "repos": ["email-mcp", "discord-mcp", "mastodon-mcp", "bluesky-mcp", "alexa-mcp", "telephony-mcp", "chitchat"],
+                "repos": [
+                    "email-mcp",
+                    "discord-mcp",
+                    "mastodon-mcp",
+                    "bluesky-mcp",
+                    "alexa-mcp",
+                    "telephony-mcp",
+                    "chitchat",
+                ],
             },
             {
                 "name": "Development & DevOps",
-                "repos": ["git-github-mcp", "docker-mcp", "filesystem-mcp", "web-development-mcp", "database-operations-mcp", "browser-mcp", "windows-operations-mcp", "meta_mcp", "fleetwatcher-mcp", "monitoring-mcp"],
+                "repos": [
+                    "git-github-mcp",
+                    "docker-mcp",
+                    "filesystem-mcp",
+                    "web-development-mcp",
+                    "database-operations-mcp",
+                    "browser-mcp",
+                    "windows-operations-mcp",
+                    "meta_mcp",
+                    "fleetwatcher-mcp",
+                    "monitoring-mcp",
+                ],
             },
             {
                 "name": "CAD & Design",
-                "repos": ["freecad-mcp", "qcad-mcp", "kicad-mcp", "chip-design-mcp", "codecad-mcp", "sketchboard-excalidraw-mcp"],
+                "repos": [
+                    "freecad-mcp",
+                    "qcad-mcp",
+                    "kicad-mcp",
+                    "chip-design-mcp",
+                    "codecad-mcp",
+                    "sketchboard-excalidraw-mcp",
+                ],
             },
             {
                 "name": "Automation & Control",
-                "repos": ["multi-backup-mcp", "devices-mcp", "home-assistant-mcp", "tapo-mcp", "netatmo-weather-mcp", "pdf-mcp", "system-admin-mcp", "disk-usage-mcp"],
+                "repos": [
+                    "multi-backup-mcp",
+                    "devices-mcp",
+                    "home-assistant-mcp",
+                    "tapo-mcp",
+                    "netatmo-weather-mcp",
+                    "pdf-mcp",
+                    "system-admin-mcp",
+                    "disk-usage-mcp",
+                ],
             },
             {
                 "name": "Robotics & Simulation",
-                "repos": ["yahboom-mcp", "robotics-mcp", "gazebo-mcp", "mujoco-mcp", "ros-mcp", "unitree-mcp", "isaac-mcp", "limx-robotics-mcp"],
+                "repos": [
+                    "yahboom-mcp",
+                    "robotics-mcp",
+                    "gazebo-mcp",
+                    "mujoco-mcp",
+                    "ros-mcp",
+                    "unitree-mcp",
+                    "isaac-mcp",
+                    "limx-robotics-mcp",
+                ],
             },
             {
                 "name": "Productivity & MCP",
-                "repos": ["advanced-memory-mcp", "bookmarks-mcp", "notion-mcp", "obsidian-mcp", "onenote-mcp", "mcp-studio", "depot-mcp", "speech-mcp", "glama-status-mcp", "toolbench-mcp"],
+                "repos": [
+                    "advanced-memory-mcp",
+                    "bookmarks-mcp",
+                    "notion-mcp",
+                    "obsidian-mcp",
+                    "onenote-mcp",
+                    "mcp-studio",
+                    "depot-mcp",
+                    "speech-mcp",
+                    "glama-status-mcp",
+                    "toolbench-mcp",
+                ],
             },
         ]
     }
@@ -104,3 +183,36 @@ async def list_videos():
             for f in files
         ]
     }
+
+
+@app.get("/api/depot")
+async def list_depot():
+    """Return all produced videos grouped by repo with their narration scripts."""
+    repos_dir = Path(config.data_dir) / "videos"
+    if not repos_dir.exists():
+        return {"repos": []}
+
+    entries = []
+    for repo_dir in sorted(repos_dir.iterdir()):
+        if not repo_dir.is_dir():
+            continue
+        mp4 = list(repo_dir.glob("*.mp4"))
+        if not mp4:
+            continue
+        script_path = repo_dir / "narration.yaml"
+        for vid in mp4:
+            s = vid.stat()
+            entries.append(
+                {
+                    "repo": repo_dir.name,
+                    "name": vid.stem,
+                    "video_path": f"/videos/{repo_dir.name}/{vid.name}",
+                    "size_kb": s.st_size // 1024,
+                    "created": str(int(s.st_mtime)),
+                    "has_script": script_path.exists(),
+                    "script": script_path.read_text(encoding="utf-8")
+                    if script_path.exists()
+                    else None,
+                }
+            )
+    return {"repos": entries}

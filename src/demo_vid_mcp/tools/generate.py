@@ -93,6 +93,12 @@ async def demo_vid_generate(
     video_dir = Path(config.data_dir) / "videos" / repo
     video_dir.mkdir(parents=True, exist_ok=True)
 
+    # Save the narration script alongside the video for rebuild
+    import yaml
+
+    script_path = video_dir / "narration.yaml"
+    script_path.write_text(yaml.dump(script, default_flow_style=False), encoding="utf-8")
+
     stages = {}
 
     voice_task = generate_voiceover(script, str(video_dir), config.speech_mcp_url)

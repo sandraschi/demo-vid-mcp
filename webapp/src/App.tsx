@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { Video, SquareStack, FileText, ListOrdered, HelpCircle, LayoutDashboard, Clapperboard } from "lucide-react";
+import { Video, SquareStack, FileText, ListOrdered, HelpCircle, LayoutDashboard, Warehouse } from "lucide-react";
 import Dashboard from "./pages/Dashboard";
-import Gallery from "./pages/Gallery";
+import Depot from "./pages/Depot";
 import Detail from "./pages/Detail";
 import Generate from "./pages/Generate";
 import Scripts from "./pages/Scripts";
@@ -10,7 +10,7 @@ import Help from "./pages/Help";
 
 const NAV = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { id: "gallery", label: "Gallery", icon: Clapperboard },
+  { id: "depot", label: "Depot", icon: Warehouse },
   { id: "generate", label: "Generate", icon: Video },
   { id: "scripts", label: "Scripts", icon: FileText },
   { id: "queue", label: "Queue", icon: ListOrdered },
@@ -25,7 +25,7 @@ export default function App() {
 
   const PageComponent = {
     dashboard: Dashboard,
-    gallery: Gallery,
+    depot: Depot,
     detail: Detail,
     generate: Generate,
     scripts: Scripts,
