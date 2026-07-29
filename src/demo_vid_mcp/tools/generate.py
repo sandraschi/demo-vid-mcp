@@ -7,7 +7,9 @@ import logging
 import subprocess
 from pathlib import Path
 from typing import Annotated
+from urllib.parse import urlparse
 
+import httpx
 from fastmcp import Context
 from pydantic import Field
 
@@ -40,9 +42,16 @@ _KNOWN_PORTS = {
 
 
 async def _ensure_target_running(repo: str, base_url: str) -> bool:
-    """Try to start the target repo's webapp if it's not already running."""
-    import httpx
+    """Start the target repo's backend AND frontend, wait for both to respond."""
+    parsed = urlparse(base_url)
+    frontend_port = parsed.port or 10975
 
+    repo_dir = _REPOS_ROOT / repo
+    if not repo_dir.exists():
+        logger.warning("Repo dir not found: %s", repo_dir)
+        return False
+
+    # Check if already running
     try:
         r = await httpx.get(base_url, timeout=3)
         if r.status_code < 400:
@@ -50,17 +59,11 @@ async def _ensure_target_running(repo: str, base_url: str) -> bool:
     except (httpx.ConnectError, httpx.RequestError):
         pass
 
-    # Backend: uv run python -m {package}.app or similar
-    repo_dir = _REPOS_ROOT / repo
-    if not repo_dir.exists():
-        logger.warning("Repo dir not found: %s", repo_dir)
-        return False
-
-    # Try starting the backend via the repo's own start.ps1
+    # 1. Start backend
     start_ps1 = repo_dir / "start.ps1"
     if start_ps1.exists():
-        logger.info("Starting %s webapp via start.ps1...", repo)
-        _proc = await asyncio.create_subprocess_exec(  # noqa: F841 — fire-and-forget, don't wait
+        logger.info("Starting %s backend via start.ps1...", repo)
+        _proc = await asyncio.create_subprocess_exec(  # noqa: F841
             "powershell.exe",
             "-NoProfile",
             "-ExecutionPolicy",
@@ -68,35 +71,48 @@ async def _ensure_target_running(repo: str, base_url: str) -> bool:
             "-File",
             str(start_ps1),
             "-Headless",
+            "-BackendOnly",
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
         )
-        # Give it time — don't await, just fire-and-forget
-        # The pre-check loop below will validate
     else:
-        # Minimal backend start for common servers
-        logger.info("Trying direct backend start for %s...", repo)
-        try:
-            await asyncio.create_subprocess_exec(
+        logger.info("Starting %s backend directly...", repo)
+        _proc = await asyncio.create_subprocess_exec(  # noqa: F841
+            "powershell.exe",
+            "-NoProfile",
+            "-Command",
+            f"cd {repo_dir}; uv run python -m {repo.replace('-', '_')} --serve",
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+
+    # 2. Start frontend (Vite dev server)
+    webapp_dirs = ["webapp", "web_sota", "frontend"]
+    for wd in webapp_dirs:
+        webapp_dir = repo_dir / wd
+        if webapp_dir.exists() and (webapp_dir / "package.json").exists():
+            logger.info("Starting %s frontend (Vite) from %s...", repo, wd)
+            _proc = await asyncio.create_subprocess_exec(  # noqa: F841
                 "powershell.exe",
                 "-NoProfile",
                 "-Command",
-                f"cd {repo_dir}; uv run python -m {repo.replace('-', '_')} --serve",
+                f"cd {webapp_dir}; bun run dev --port {frontend_port}",
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
             )
-        except Exception:
-            pass
+            break
 
-    # Wait for it to come up (up to 30s)
-    for _ in range(30):
+    # 3. Wait for both to come up (up to 30s)
+    for i in range(30):
         await asyncio.sleep(1)
         try:
             r = await httpx.get(base_url, timeout=2)
             if r.status_code < 400:
-                logger.info("Target %s is now reachable on %s", repo, base_url)
+                logger.info(
+                    "Target %s is now reachable on %s (attempt %d/%d)", repo, base_url, i + 1, 30
+                )
                 return True
-        except (httpx.ConnectError, httpx.RequestError):
+        except httpx.RequestError:
             continue
 
     logger.warning("Target %s did not come up on %s after 30s", repo, base_url)
