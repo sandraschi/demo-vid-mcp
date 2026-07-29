@@ -1,6 +1,9 @@
 """FastAPI application — REST API for demo video webapp."""
 
+import logging
+from collections import deque
 from contextlib import asynccontextmanager
+from datetime import datetime, timezone
 from pathlib import Path
 
 from fastapi import FastAPI
@@ -10,6 +13,24 @@ from fastapi.staticfiles import StaticFiles
 from . import __version__
 from .config import config
 from .server import mcp
+
+# Ring-buffer log handler — stores last 500 log records in memory
+_log_buffer: deque[dict] = deque(maxlen=500)
+
+
+class RingBufferHandler(logging.Handler):
+    def emit(self, record: logging.LogRecord) -> None:
+        _log_buffer.append({
+            "time": datetime.fromtimestamp(record.created, tz=timezone.utc).isoformat(),
+            "level": record.levelname,
+            "source": record.name,
+            "message": record.getMessage(),
+        })
+
+
+_log_handler = RingBufferHandler()
+_log_handler.setLevel(logging.INFO)
+logging.getLogger("demo-vid-mcp").addHandler(_log_handler)
 
 _mcp_http = mcp.http_app(path="/")
 
@@ -216,3 +237,16 @@ async def list_depot():
                 }
             )
     return {"repos": entries}
+
+
+@app.get("/api/logs")
+async def logs_get(limit: int = 50, level: str = "INFO", search: str = ""):
+    """Return recent log entries from the ring buffer."""
+    levels = {"DEBUG": 0, "INFO": 1, "WARNING": 2, "ERROR": 3, "CRITICAL": 4}
+    min_level = levels.get(level.upper(), 1)
+    filtered = [
+        e for e in _log_buffer
+        if levels.get(e["level"], 1) >= min_level
+        and (not search or search.lower() in e["message"].lower())
+    ]
+    return {"logs": filtered[-limit:], "total": len(filtered)}
