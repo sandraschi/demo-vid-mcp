@@ -97,6 +97,7 @@ export default function Depot() {
                       </div>
                     </div>
                   )}
+                </div>
                 <div className="p-3">
                   <div className="flex items-center justify-between">
                     <div>
