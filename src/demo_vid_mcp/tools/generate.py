@@ -26,17 +26,12 @@ _KNOWN_PORTS = {
     "chitchat": 10975,
     "arxiv-mcp": 10771,
     "calibre-mcp": 10721,
-    "pywinauto-mcp": 10789,
-    "blender-mcp": 10849,
+    "blender-mcp": 10848,
     "email-mcp": 10812,
-    "games-app": 10986,
     "godot-mcp": 10992,
     "gimp-mcp": 10772,
     "resonite-mcp": 10978,
     "vroidstudio-mcp": 10880,
-    "codecad-mcp": 11083,
-    "comfyops-mcp": 11088,
-    "learnbot-mcp": 11101,
     "llm-txt-mcp": 10836,
 }
 
