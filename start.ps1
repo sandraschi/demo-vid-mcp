@@ -19,7 +19,8 @@ for ($i = 0; $i -lt 60; $i++) {
 
 # Start frontend
 $WebRoot = Join-Path $ScriptRoot "webapp"
-Start-Process -NoNewWindow -FilePath "bun" -ArgumentList "run dev" -WorkingDirectory $WebRoot
+$BunPath = "C:\Users\sandr\.bun\bin\bun.exe"
+Start-Process -NoNewWindow -FilePath $BunPath -ArgumentList "run dev" -WorkingDirectory $WebRoot
 
 # Open browser
 if (-not $NoBrowser -and -not $Headless) { Start-Process "http://127.0.0.1:$FrontendPort" }
