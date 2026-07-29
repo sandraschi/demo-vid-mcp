@@ -51,9 +51,27 @@ async def _ensure_target_running(repo: str, base_url: str) -> bool:
         logger.warning("Repo dir not found: %s", repo_dir)
         return False
 
-    # Check if already running
+    # Kill zombies on the target frontend port (stale processes from previous runs)
+    import subprocess as _sp
+
     try:
-        r = await httpx.get(base_url, timeout=3)
+        _sp.run(
+            [
+                "powershell.exe",
+                "-NoProfile",
+                f"Get-NetTCPConnection -LocalPort {frontend_port} -ErrorAction SilentlyContinue | "
+                f"ForEach-Object {{ Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }}",
+            ],
+            capture_output=True,
+            timeout=5,
+        )
+    except Exception:
+        pass
+
+    # Check if already running (zombie kill may have freed the port)
+    try:
+        async with httpx.AsyncClient(timeout=3) as client:
+            r = await client.get(base_url)
         if r.status_code < 400:
             return True
     except (httpx.ConnectError, httpx.RequestError):
@@ -106,7 +124,8 @@ async def _ensure_target_running(repo: str, base_url: str) -> bool:
     for i in range(30):
         await asyncio.sleep(1)
         try:
-            r = await httpx.get(base_url, timeout=2)
+            async with httpx.AsyncClient(timeout=2) as client:
+                r = await client.get(base_url)
             if r.status_code < 400:
                 logger.info(
                     "Target %s is now reachable on %s (attempt %d/%d)", repo, base_url, i + 1, 30
