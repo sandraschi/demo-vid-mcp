@@ -1,0 +1,27 @@
+{
+  "manifest_version": "0.2",
+  "name": "demo-vid-mcp",
+  "version": "0.1.0",
+  "description": "Fleet intro video pipeline — record, narrate, compose, and refine repo walkthrough videos.",
+  "author": { "name": "Sandra Schipal" },
+  "server": {
+    "type": "python",
+    "entry_point": "src/demo_vid_mcp/server.py",
+    "mcp_config": {
+      "command": "python",
+      "args": ["-m", "demo_vid_mcp"],
+      "env": {
+        "PYTHONPATH": "${PWD}",
+        "PYTHONUNBUFFERED": "1"
+      }
+    }
+  },
+  "tools": [
+    { "name": "demo_vid_generate", "description": "Full pipeline: auto-start target, record, voiceover, compose to MP4." },
+    { "name": "demo_vid_list", "description": "List produced videos with metadata." },
+    { "name": "demo_vid_refine", "description": "Re-generate a video with timing/narration adjustments." },
+    { "name": "demo_vid_script_draft", "description": "Draft a narration YAML script from a repo's README." },
+    { "name": "demo_vid_script_validate", "description": "Validate a narration script's structure and timing." },
+    { "name": "demo_vid_help", "description": "List all tools and usage." }
+  ]
+}

@@ -1,16 +1,15 @@
 """Script parsing, validation, and README-aware default generation."""
 
 import re
-from pathlib import Path
 
 import yaml
 
-_REPOS_ROOT = Path("D:/Dev/repos")
+from demo_vid_mcp.config import config
 
 
 def _read_repo_readme(repo: str) -> str | None:
     """Try to read the target repo's README for context-aware script generation."""
-    readme_path = _REPOS_ROOT / repo / "README.md"
+    readme_path = config.repos_root / repo / "README.md"
     if readme_path.exists():
         return readme_path.read_text(encoding="utf-8")
     return None
@@ -21,7 +20,7 @@ def _find_pages(repo: str) -> list[dict]:
     webapp_dirs = ["web_sota/src/pages", "webapp/src/pages", "frontend/src/pages"]
     pages = []
     for rel in webapp_dirs:
-        pages_dir = _REPOS_ROOT / repo / rel
+        pages_dir = config.repos_root / repo / rel
         if pages_dir.exists():
             for f in sorted(pages_dir.glob("*.tsx")):
                 name = f.stem.replace("Page", "").lower()

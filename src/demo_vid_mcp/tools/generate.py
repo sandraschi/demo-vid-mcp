@@ -22,7 +22,6 @@ from demo_vid_mcp.server import mcp
 
 logger = logging.getLogger("demo-vid-mcp.tools.generate")
 
-_REPOS_ROOT = Path("D:/Dev/repos")
 _KNOWN_PORTS = {
     "chitchat": 10975,
     "arxiv-mcp": 10771,
@@ -46,7 +45,7 @@ async def _ensure_target_running(repo: str, base_url: str) -> bool:
     parsed = urlparse(base_url)
     frontend_port = parsed.port or 10975
 
-    repo_dir = _REPOS_ROOT / repo
+    repo_dir = config.repos_root / repo
     if not repo_dir.exists():
         logger.warning("Repo dir not found: %s", repo_dir)
         return False
@@ -215,8 +214,11 @@ async def demo_vid_generate(
 
     stages = {}
 
-    voice_task = generate_voiceover(script, str(video_dir), config.speech_mcp_url)
-    record_task = record(script, str(video_dir))
+    # Voiceover and recording run in parallel
+    voice_task = asyncio.create_task(
+        generate_voiceover(script, str(video_dir), config.speech_mcp_url)
+    )
+    record_task = asyncio.create_task(record(script, str(video_dir)))
 
     voice_result = await voice_task
     stages["voiceover"] = voice_result

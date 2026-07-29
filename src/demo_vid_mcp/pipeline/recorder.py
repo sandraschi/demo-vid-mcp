@@ -15,7 +15,8 @@ async def record(script: dict, output_dir: str) -> dict:
     """Run Playwright to capture a .webm from a narration script.
 
     Uses Playwright's native video recording (recordVideo context option).
-    Results in a .webm file in output_dir.
+    Checks process exit code BEFORE looking for output files — prevents
+    stale files from a previous run being reported as success.
 
     ## Return Format
     {"success": bool, "video_path": str | None, "message": str}
@@ -26,6 +27,12 @@ async def record(script: dict, output_dir: str) -> dict:
     capture_js = script_dir / "playwright-capture.js"
     if not capture_js.exists():
         return {"success": False, "error": f"Capture script not found at {capture_js}"}
+
+    # Delete any stale recording from previous run
+    stale = Path(output_dir) / "recording.webm"
+    stale.unlink(missing_ok=True)
+    for old in Path(output_dir).glob("*.webm"):
+        old.unlink(missing_ok=True)
 
     steps_file = Path(output_dir) / ".capture-steps.json"
     steps_file.write_text(json.dumps(steps), encoding="utf-8")
@@ -43,6 +50,16 @@ async def record(script: dict, output_dir: str) -> dict:
         _, stderr = await asyncio.wait_for(proc.communicate(), timeout=120)
         steps_file.unlink(missing_ok=True)
 
+        # Check exit code BEFORE looking for files — JS may have exited 1 on blank page
+        if proc.returncode != 0:
+            err_text = stderr.decode()[:500] if stderr else f"Exit code {proc.returncode}"
+            return {
+                "success": False,
+                "error": err_text,
+                "suggestions": ["Check the target webapp is running and has actual content"],
+            }
+
+        # Find the output webm
         output = Path(output_dir) / "recording.webm"
         if not output.exists():
             base = Path(output_dir) / "recording"
@@ -61,10 +78,6 @@ async def record(script: dict, output_dir: str) -> dict:
                             "Check the target URLs resolve in a browser",
                         ],
                     }
-
-        if proc.returncode != 0:
-            err_text = stderr.decode()[:500] if stderr else f"Exit code {proc.returncode}"
-            return {"success": False, "error": err_text}
 
         return {"success": True, "video_path": str(output), "message": "Recording complete"}
     except TimeoutError:

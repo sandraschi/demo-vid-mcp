@@ -1,5 +1,6 @@
 import os
 from dataclasses import dataclass
+from pathlib import Path
 
 
 @dataclass
@@ -8,6 +9,7 @@ class Config:
     backend_port: int = int(os.getenv("PORT", "11134"))
     log_level: str = os.getenv("DEMO_VID_LOG_LEVEL", "info")
     data_dir: str = os.getenv("DEMO_VID_DATA_DIR", "data")
+    repos_root: Path = Path(os.getenv("DEMO_VID_REPOS_ROOT", "D:/Dev/repos"))
 
     speech_mcp_url: str | None = os.getenv("SPEECH_MCP_URL")
     blender_mcp_url: str | None = os.getenv("BLENDER_MCP_URL")

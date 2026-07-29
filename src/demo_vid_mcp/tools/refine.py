@@ -1,4 +1,4 @@
-"""Tool: demo_vid_refine — re-generate with script tweaks."""
+"""Tool: demo_vid_refine — re-generate with tweaks."""
 
 from __future__ import annotations
 
@@ -14,29 +14,25 @@ async def demo_vid_refine(
     video_name: Annotated[
         str, Field(description="Name of the video to refine (e.g. chitchat-final).")
     ],
-    feedback: Annotated[
-        str,
-        Field(
-            description="Natural-language description of changes needed (timing, narration, re-record steps)."
-        ),
-    ],
+    feedback: Annotated[str, Field(description="Natural-language description of changes needed.")],
 ) -> dict:
     """Re-generate a video with timing or narration adjustments.
 
-    [RATIONALE] Consolidates refine operations into one tool. Future iterations will use
-    LLM sampling to interpret feedback and adjust the script automatically.
+    [RATIONALE] This tool is a stub — refinement requires LLM-driven script mutation
+    which is not yet implemented. It returns a helpful message pointing to the
+    working alternative (demo_vid_generate with an updated script).
 
     ## Return Format
-    {"success": bool, "message": str, "suggestions": list | None}
+    {"success": False, "error": str, "suggestions": list}
 
     ## Examples
-    await demo_vid_refine(video_name="chitchat-final", feedback="Make step 2 narration longer and add a pause before the click")
+    await demo_vid_refine(video_name="chitchat-final", feedback="Make step 2 narration longer")
     """
     return {
-        "success": True,
-        "message": f"Refinement queued for {video_name}",
+        "success": False,
+        "error": "demo_vid_refine is not yet implemented",
         "suggestions": [
-            "Use demo_vid_generate with an updated script_yaml for a full re-render",
-            "The refine sub-pipeline uses the same stages as generate — feedback-driven script edits are an upcoming feature",
+            "Edit the narration.yaml in data/videos/{repo}/ and re-run demo_vid_generate with script_yaml=...",
+            "Use the Depot page — click the Code icon to view the script, edit it, paste into the Generate page",
         ],
     }
