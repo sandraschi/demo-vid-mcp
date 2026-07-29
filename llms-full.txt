@@ -1,0 +1,47 @@
+# demo-vid-mcp — full reference
+
+## Architecture
+
+demo-vid-mcp orchestrates fleet services to produce repo intro videos. Pipeline stages:
+- Script parsing (YAML narration)
+- Playwright recording (.webm)
+- voiceover via speech-mcp TTS (.wav)
+- Composition via FFmpeg (.mp4)
+- Optional: blender-mcp 3D titles, gimp-mcp art, davinci-resolve-mcp composition
+
+## Tools
+
+### demo_vid_generate(repo, script_yaml?)
+Full pipeline: validate script, voiceover, record, compose.
+
+### demo_vid_list(repo?)
+List produced videos. Filters by repo when given.
+
+### demo_vid_refine(video_name, feedback)
+Re-generate with timing/narration adjustments.
+
+### demo_vid_script_draft(repo)
+Draft default narration YAML for a repo.
+
+### demo_vid_script_validate(script_yaml)
+Validate narration script structure.
+
+## Configuration
+
+See docs/CONFIGURATION.md.
+
+## Fleet Services
+
+| Service | URL env var | Fallback |
+|---------|-------------|----------|
+| speech-mcp | SPEECH_MCP_URL | Required — no fallback |
+| blender-mcp | BLENDER_MCP_URL | gimp-mcp → plain text |
+| gimp-mcp | GIMP_MCP_URL | plain text title |
+| davinci-resolve-mcp | DAVINCI_RESOLVE_MCP_URL | FFmpeg composition |
+| vfx-mcp | VFX_MCP_URL | No effects |
+| stems-mcp | STEMS_MCP_URL | No music |
+| sfx-mcp | SFX_MCP_URL | No sound effects |
+
+## Ports
+
+11134 (backend), 11135 (frontend).

@@ -1,0 +1,54 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+
+# Node / webapp
+node_modules/
+**/node_modules/
+*.tsbuildinfo
+
+# Build output
+dist/
+build/
+
+# MCPB pack staging
+mcpb/src/
+mcpb/
+
+# Data / DB
+data/
+*.db
+*.db-shm
+*.db-wal
+
+# Secrets
+.env
+.env.*
+!.env.example
+*.pem
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+
+# Logs
+*.log
+logs/
+
+# Fleet backup artifacts
+*.bak
+*.bak.*
+
+# Rust / Tauri (rust-analyzer may emit target/)
+target/

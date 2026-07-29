@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "demo-vid-mcp": {
+      "command": "python",
+      "args": ["-m", "demo_vid_mcp"],
+      "env": { "PYTHONPATH": "${workspaceFolder}" },
+      "capabilities": { "tools": { "enabled": true } },
+      "metadata": {
+        "version": "0.1.0",
+        "tags": ["video", "pipeline", "fleet", "demo"],
+        "homepage": "https://github.com/sandraschi/demo-vid-mcp"
+      }
+    }
+  }
+}
