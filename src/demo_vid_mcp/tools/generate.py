@@ -18,24 +18,66 @@ from demo_vid_mcp.server import mcp
 
 logger = logging.getLogger("demo-vid-mcp.tools.generate")
 
+# Fleet webapp port registry: {repo: frontend_port}
+_KNOWN_PORTS = {
+    "chitchat": 10975,
+    "arxiv-mcp": 10771,
+    "calibre-mcp": 10721,
+    "pywinauto-mcp": 10789,
+    "blender-mcp": 10849,
+    "email-mcp": 10812,
+    "games-app": 10986,
+    "godot-mcp": 10992,
+    "gimp-mcp": 10772,
+    "resonite-mcp": 10978,
+    "vroidstudio-mcp": 10880,
+    "codecad-mcp": 11083,
+    "comfyops-mcp": 11088,
+    "learnbot-mcp": 11101,
+}
+
+
+def _resolve_base_url(repo: str, base_url: str | None) -> str:
+    if base_url:
+        return base_url.rstrip("/")
+    port = _KNOWN_PORTS.get(repo, 10975)
+    return f"http://127.0.0.1:{port}"
+
+
+def _resolve_urls(script: dict, base_url: str) -> dict:
+    """Prefix relative URLs in script steps with the base URL."""
+    for step in script.get("steps", []):
+        url = step.get("url", "")
+        if url and not url.startswith("http"):
+            step["url"] = f"{base_url}{url}"
+    return script
+
 
 @mcp.tool()
 async def demo_vid_generate(
-    repo: Annotated[str, Field(description="Repository name (e.g. 'chitchat')")],
+    repo: Annotated[str, Field(description="Repository name (e.g. 'chitchat').")],
     script_yaml: Annotated[
         str | None, Field(description="Optional YAML narration script. Defaults to auto-generated.")
+    ] = None,
+    base_url: Annotated[
+        str | None,
+        Field(
+            description="Target webapp URL (e.g. 'http://127.0.0.1:10975'). Auto-detected from port registry if omitted."
+        ),
     ] = None,
     ctx: Context = None,
 ) -> dict:
     """Generate a demo video for a fleet repo.
 
-    Runs the full pipeline: validate script → voiceover (speech-mcp) → record (Playwright) → compose (FFmpeg). Stages 2+3 run in parallel. Output saved to data/videos/.
+    Runs the full pipeline: validate script → voiceover (speech-mcp) → record (Playwright) → compose (FFmpeg).
+    Stages run in parallel where possible. Output saved to data/videos/.
 
     ## Return Format
-    {"success": bool, "message": str, "video_path": str | None, "stages": {"voiceover": {...}, "recording": {...}, "compose": {...}}}
+    {"success": bool, "message": str, "video_path": str | None, "stages": {...}}
 
     ## Examples
-    await demo_vid_generate(repo="chitchat", script_yaml=...)
+    await demo_vid_generate(repo="chitchat")
+    await demo_vid_generate(repo="chitchat", base_url="http://127.0.0.1:10975")
     """
     if script_yaml:
         validated = validate_script(script_yaml)
@@ -44,6 +86,9 @@ async def demo_vid_generate(
         script = validated["script"]
     else:
         script = default_script(repo)
+
+    base = _resolve_base_url(repo, base_url)
+    script = _resolve_urls(script, base)
 
     video_dir = Path(config.data_dir) / "videos" / repo
     video_dir.mkdir(parents=True, exist_ok=True)
@@ -67,6 +112,7 @@ async def demo_vid_generate(
             "suggestions": [
                 "Check Playwright is installed: npx playwright install chromium",
                 "Check the script selectors resolve in the live app",
+                "Is the target webapp running on the expected port?",
             ],
         }
 

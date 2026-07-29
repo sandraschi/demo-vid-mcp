@@ -39,7 +39,7 @@ async def generate_voiceover(script: dict, output_dir: str, speech_mcp_url: str 
     async with httpx.AsyncClient(timeout=30) as client:
         for i, text in enumerate(say_segments):
             try:
-                r = await client.post(f"{speech_mcp_url}/api/tts", json={"text": text})
+                r = await client.post(f"{speech_mcp_url}/api/v1/tts", json={"text": text})
                 if r.status_code == 200:
                     seg_path = Path(output_dir) / f"segment_{i}.wav"
                     seg_path.write_bytes(r.content)
