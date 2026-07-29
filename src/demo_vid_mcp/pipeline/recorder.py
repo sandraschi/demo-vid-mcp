@@ -12,45 +12,60 @@ logger = logging.getLogger("demo-vid-mcp.recorder")
 
 
 async def record(script: dict, output_dir: str) -> dict:
-    """Run Playwright to record a .webm from a narration script.
+    """Run Playwright to capture a .webm from a narration script.
+
+    Uses Playwright's native video recording (recordVideo context option).
+    Results in a .webm file in output_dir.
 
     ## Return Format
     {"success": bool, "video_path": str | None, "message": str}
     """
     steps = script.get("steps", [])
-    script_json = json.dumps(steps)
-    output = Path(output_dir) / "recording.webm"
 
-    pw_script = f"""
-    const {{ chromium }} = require('playwright');
-    (async () => {{
-        const browser = await chromium.launch({{ headless: true }});
-        const context = await browser.newContext({{ viewport: {{ width: 1280, height: 720 }} }});
-        const page = await context.newPage();
-        const steps = {script_json};
-        for (const step of steps) {{
-            if (step.action === 'goto') {{
-                await page.goto(step.url, {{ waitUntil: 'networkidle', timeout: 15000 }});
-            }} else if (step.action === 'click') {{
-                try {{ await page.click(step.target, {{ timeout: 5000 }}); }} catch {{ /* selector may not exist */ }}
-            }}
-            if (step.wait) await page.waitForTimeout(step.wait * 1000);
-        }}
-        await page.close();
-        await browser.close();
-    }})();
-    """
+    script_dir = Path(__file__).resolve().parents[2] / "scripts"
+    capture_js = script_dir / "playwright-capture.js"
+    if not capture_js.exists():
+        return {"success": False, "error": f"Capture script not found at {capture_js}"}
+
+    steps_file = Path(output_dir) / ".capture-steps.json"
+    steps_file.write_text(json.dumps(steps), encoding="utf-8")
+    output_base = str(Path(output_dir) / "recording")
+
     try:
         proc = await asyncio.create_subprocess_exec(
             "node",
-            "-e",
-            pw_script,
+            str(capture_js),
+            str(steps_file),
+            output_base,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
         )
         _, stderr = await asyncio.wait_for(proc.communicate(), timeout=120)
+        steps_file.unlink(missing_ok=True)
+
+        output = Path(output_dir) / "recording.webm"
+        if not output.exists():
+            base = Path(output_dir) / "recording"
+            if base.exists():
+                base.rename(output)
+            else:
+                webms = list(Path(output_dir).glob("*.webm"))
+                if webms:
+                    output = webms[0]
+                else:
+                    return {
+                        "success": False,
+                        "error": "Recording produced no video file",
+                        "suggestions": [
+                            "Check Playwright is installed: npx playwright install chromium",
+                            "Check the target URLs resolve in a browser",
+                        ],
+                    }
+
         if proc.returncode != 0:
-            return {"success": False, "error": stderr.decode()[:500]}
+            err_text = stderr.decode()[:500] if stderr else f"Exit code {proc.returncode}"
+            return {"success": False, "error": err_text}
+
         return {"success": True, "video_path": str(output), "message": "Recording complete"}
     except TimeoutError:
         return {"success": False, "error": "Recording timed out after 120s"}

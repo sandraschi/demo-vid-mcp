@@ -12,6 +12,7 @@ env/
 # Node / webapp
 node_modules/
 **/node_modules/
+package-lock.json
 *.tsbuildinfo
 
 # Build output
