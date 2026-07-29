@@ -99,6 +99,23 @@ async def demo_vid_generate(
     script_path = video_dir / "narration.yaml"
     script_path.write_text(yaml.dump(script, default_flow_style=False), encoding="utf-8")
 
+    # Pre-check: is the target webapp reachable?
+    first_url = script.get("steps", [{}])[0].get("url", "")
+    if first_url:
+        import httpx
+        try:
+            head_r = await httpx.head(first_url, timeout=5)
+            if head_r.status_code >= 400:
+                return {"success": False, "error": f"Target webapp returned HTTP {head_r.status_code} at {first_url}",
+                        "suggestions": [f"Start the target webapp (frontend) on {first_url}",
+                                        "Check the repo's port in WEBAPP_PORTS.md"]}
+        except httpx.ConnectError:
+            return {"success": False, "error": f"Target webapp not reachable at {first_url}",
+                    "suggestions": [f"Start the target webapp (frontend) on {first_url}",
+                                    f"Run: cd D:\\Dev\\repos\\{repo}\\webapp && start.ps1"]}
+        except httpx.RequestError as e:
+            logger.warning("Pre-check failed: %s — continuing anyway", e)
+
     stages = {}
 
     voice_task = generate_voiceover(script, str(video_dir), config.speech_mcp_url)
