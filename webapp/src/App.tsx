@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { Video, SquareStack, FileText, ListOrdered, HelpCircle, LayoutDashboard, Warehouse, Terminal } from "lucide-react";
+import { Video, SquareStack, FileText, ListOrdered, HelpCircle, LayoutDashboard, Warehouse, Terminal, Clapperboard } from "lucide-react";
 import Dashboard from "./pages/Dashboard";
 import Depot from "./pages/Depot";
 import Detail from "./pages/Detail";
 import Generate from "./pages/Generate";
+import Choreography from "./pages/Choreography";
 import Logs from "./pages/Logs";
 import Scripts from "./pages/Scripts";
 import Queue from "./pages/Queue";
@@ -13,6 +14,7 @@ const NAV = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
   { id: "depot", label: "Depot", icon: Warehouse },
   { id: "generate", label: "Generate", icon: Video },
+  { id: "choreography", label: "Choreography", icon: Clapperboard },
   { id: "scripts", label: "Scripts", icon: FileText },
   { id: "logs", label: "Logs", icon: Terminal },
   { id: "queue", label: "Queue", icon: ListOrdered },
@@ -30,6 +32,7 @@ export default function App() {
     depot: Depot,
     detail: Detail,
     generate: Generate,
+    choreography: Choreography,
     logs: Logs,
     scripts: Scripts,
     queue: Queue,
