@@ -6,6 +6,7 @@ from contextlib import asynccontextmanager
 from datetime import UTC, datetime
 from pathlib import Path
 
+import httpx
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -67,6 +68,19 @@ async def health():
         "version": __version__,
         "videos_served": sum(1 for _ in videos_dir.iterdir() if _.suffix == ".mp4"),
     }
+
+
+@app.get("/api/health/speech")
+async def speech_health():
+    """Probe speech-mcp health via backend (avoids browser CORS issues)."""
+    try:
+        async with httpx.AsyncClient(timeout=3) as client:
+            r = await client.get("http://127.0.0.1:10909/api/health")
+            return {"detected": r.status_code == 200, "status": r.status_code}
+    except httpx.ConnectError:
+        return {"detected": False}
+    except Exception as e:
+        return {"detected": False, "error": str(e)}
 
 
 @app.post("/api/generate")
@@ -321,14 +335,21 @@ async def insert_into_repo(repo: str):
 @app.get("/api/skills")
 async def list_skills():
     """Return available skills (preprompts) for the chat page."""
-    return {"skills": [
-        {"name": "demo-vid-mcp", "description": "Expert in generating fleet demo videos with Playwright, speech-mcp, and FFmpeg."},
-    ]}
+    return {
+        "skills": [
+            {
+                "name": "demo-vid-mcp",
+                "description": "Expert in generating fleet demo videos with Playwright, speech-mcp, and FFmpeg.",
+            },
+        ]
+    }
 
 
 @app.get("/api/skills/demo-vid-mcp")
 async def get_skill():
-    return {"content": "# demo-vid-mcp skill\n\nYou are a demo video generation expert.\n\n## Tools\n- demo_vid_generate: Full pipeline\n- demo_vid_script_draft: Generate narration scripts\n- demo_vid_script_validate: Validate scripts\n\n## Workflow\n1. Draft a script with demo_vid_script_draft\n2. Validate with demo_vid_script_validate\n3. Generate the video with demo_vid_generate\n4. Review in the Depot page\n5. Insert into the repo README"}
+    return {
+        "content": "# demo-vid-mcp skill\n\nYou are a demo video generation expert.\n\n## Tools\n- demo_vid_generate: Full pipeline\n- demo_vid_script_draft: Generate narration scripts\n- demo_vid_script_validate: Validate scripts\n\n## Workflow\n1. Draft a script with demo_vid_script_draft\n2. Validate with demo_vid_script_validate\n3. Generate the video with demo_vid_generate\n4. Review in the Depot page\n5. Insert into the repo README"
+    }
 
 
 @app.post("/api/llm/chat")
@@ -355,11 +376,13 @@ async def llm_chat(body: dict):
                 for line in lines:
                     if line.startswith("data: "):
                         import json
+
                         chunk = json.loads(line[6:])
                         if "message" in chunk and "content" in chunk["message"]:
                             full_content += chunk["message"]["content"]
                     elif line.startswith("{"):
                         import json
+
                         chunk = json.loads(line)
                         if "message" in chunk and "content" in chunk["message"]:
                             full_content += chunk["message"]["content"]
@@ -372,8 +395,11 @@ async def llm_chat(body: dict):
                 content = data.get("choices", [{}])[0].get("message", {}).get("content", "")
                 return {"success": True, "message": {"role": "assistant", "content": content}}
     except httpx.ConnectError:
-        return {"success": False, "error": f"Provider {provider} not reachable on {cfg['base']}",
-                "suggestions": [f"Start {provider}: ollama serve", "Check the provider port"]}
+        return {
+            "success": False,
+            "error": f"Provider {provider} not reachable on {cfg['base']}",
+            "suggestions": [f"Start {provider}: ollama serve", "Check the provider port"],
+        }
     except Exception as e:
         return {"success": False, "error": str(e)}
 
@@ -383,8 +409,22 @@ async def llm_discover():
     """Probe common LLM providers and return detected ones with available models."""
     providers = []
     probe_configs = [
-        {"name": "Ollama", "port": 11434, "path": "/api/tags", "model_path": "/api/tags", "model_key": "models", "model_name_key": "name"},
-        {"name": "LM Studio", "port": 1234, "path": "/v1/models", "model_path": "/v1/models", "model_key": "data", "model_name_key": "id"},
+        {
+            "name": "Ollama",
+            "port": 11434,
+            "path": "/api/tags",
+            "model_path": "/api/tags",
+            "model_key": "models",
+            "model_name_key": "name",
+        },
+        {
+            "name": "LM Studio",
+            "port": 1234,
+            "path": "/v1/models",
+            "model_path": "/v1/models",
+            "model_key": "data",
+            "model_name_key": "id",
+        },
     ]
     for cfg in probe_configs:
         try:
@@ -393,8 +433,19 @@ async def llm_discover():
                 if r.status_code == 200:
                     data = r.json()
                     models_data = data.get(cfg["model_key"], []) if cfg["model_key"] else []
-                    models = [m.get(cfg["model_name_key"], str(m)) for m in models_data] if isinstance(models_data, list) else []
-                    providers.append({"name": cfg["name"], "port": cfg["port"], "detected": True, "models": models})
+                    models = (
+                        [m.get(cfg["model_name_key"], str(m)) for m in models_data]
+                        if isinstance(models_data, list)
+                        else []
+                    )
+                    providers.append(
+                        {
+                            "name": cfg["name"],
+                            "port": cfg["port"],
+                            "detected": True,
+                            "models": models,
+                        }
+                    )
                 else:
                     providers.append({"name": cfg["name"], "port": cfg["port"], "detected": False})
         except (httpx.ConnectError, httpx.TimeoutException):

@@ -48,12 +48,17 @@ export default function ChatPage() {
     if (storedModel) setModel(storedModel);
   }, []);
 
-  // Provider health check
+  // Provider health check — via backend proxy (not direct browser fetch, CORS)
   useEffect(() => {
-    const ports: Record<string, number> = { ollama: 11434, lmstudio: 1234 };
-    const port = ports[provider] || 11434;
-    fetch(`http://127.0.0.1:${port}/api/tags`, { signal: AbortSignal.timeout(2000) })
-      .then(r => setProviderOk(r.ok)).catch(() => setProviderOk(false));
+    fetch("/api/llm/discover", { signal: AbortSignal.timeout(3000) })
+      .then(r => r.json())
+      .then(d => {
+        const provs = d.providers || [];
+        const found = provs.find((p: any) => p.name.toLowerCase() === provider.toLowerCase());
+        if (found) setProviderOk(found.detected);
+        else setProviderOk(false);
+      })
+      .catch(() => setProviderOk(false));
   }, [provider]);
 
   const sendMessage = useCallback(async () => {
