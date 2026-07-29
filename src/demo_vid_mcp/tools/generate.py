@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
+import subprocess
 from pathlib import Path
 from typing import Annotated
 
@@ -18,7 +20,7 @@ from demo_vid_mcp.server import mcp
 
 logger = logging.getLogger("demo-vid-mcp.tools.generate")
 
-# Fleet webapp port registry: {repo: frontend_port}
+_REPOS_ROOT = Path("D:/Dev/repos")
 _KNOWN_PORTS = {
     "chitchat": 10975,
     "arxiv-mcp": 10771,
@@ -35,6 +37,70 @@ _KNOWN_PORTS = {
     "comfyops-mcp": 11088,
     "learnbot-mcp": 11101,
 }
+
+
+async def _ensure_target_running(repo: str, base_url: str) -> bool:
+    """Try to start the target repo's webapp if it's not already running."""
+    import httpx
+
+    try:
+        r = await httpx.get(base_url, timeout=3)
+        if r.status_code < 400:
+            return True
+    except (httpx.ConnectError, httpx.RequestError):
+        pass
+
+    # Backend: uv run python -m {package}.app or similar
+    repo_dir = _REPOS_ROOT / repo
+    if not repo_dir.exists():
+        logger.warning("Repo dir not found: %s", repo_dir)
+        return False
+
+    # Try starting the backend via the repo's own start.ps1
+    start_ps1 = repo_dir / "start.ps1"
+    if start_ps1.exists():
+        logger.info("Starting %s webapp via start.ps1...", repo)
+        _proc = await asyncio.create_subprocess_exec(  # noqa: F841 — fire-and-forget, don't wait
+            "powershell.exe",
+            "-NoProfile",
+            "-ExecutionPolicy",
+            "Bypass",
+            "-File",
+            str(start_ps1),
+            "-Headless",
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        # Give it time — don't await, just fire-and-forget
+        # The pre-check loop below will validate
+    else:
+        # Minimal backend start for common servers
+        logger.info("Trying direct backend start for %s...", repo)
+        try:
+            await asyncio.create_subprocess_exec(
+                "powershell.exe",
+                "-NoProfile",
+                "-Command",
+                f"cd {repo_dir}; uv run python -m {repo.replace('-', '_')} --serve",
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+        except Exception:
+            pass
+
+    # Wait for it to come up (up to 30s)
+    for _ in range(30):
+        await asyncio.sleep(1)
+        try:
+            r = await httpx.get(base_url, timeout=2)
+            if r.status_code < 400:
+                logger.info("Target %s is now reachable on %s", repo, base_url)
+                return True
+        except (httpx.ConnectError, httpx.RequestError):
+            continue
+
+    logger.warning("Target %s did not come up on %s after 30s", repo, base_url)
+    return False
 
 
 def _resolve_base_url(repo: str, base_url: str | None) -> str:
@@ -99,22 +165,18 @@ async def demo_vid_generate(
     script_path = video_dir / "narration.yaml"
     script_path.write_text(yaml.dump(script, default_flow_style=False), encoding="utf-8")
 
-    # Pre-check: is the target webapp reachable?
+    # Pre-check: is the target webapp reachable? Try to start it if not.
     first_url = script.get("steps", [{}])[0].get("url", "")
     if first_url:
-        import httpx
-        try:
-            head_r = await httpx.head(first_url, timeout=5)
-            if head_r.status_code >= 400:
-                return {"success": False, "error": f"Target webapp returned HTTP {head_r.status_code} at {first_url}",
-                        "suggestions": [f"Start the target webapp (frontend) on {first_url}",
-                                        "Check the repo's port in WEBAPP_PORTS.md"]}
-        except httpx.ConnectError:
-            return {"success": False, "error": f"Target webapp not reachable at {first_url}",
-                    "suggestions": [f"Start the target webapp (frontend) on {first_url}",
-                                    f"Run: cd D:\\Dev\\repos\\{repo}\\webapp && start.ps1"]}
-        except httpx.RequestError as e:
-            logger.warning("Pre-check failed: %s — continuing anyway", e)
+        if not await _ensure_target_running(repo, first_url):
+            return {
+                "success": False,
+                "error": f"Target webapp not reachable at {first_url}",
+                "suggestions": [
+                    f"Start the target webapp (frontend) on {first_url}",
+                    "The auto-start was attempted but failed — the backend may need a manual start",
+                ],
+            }
 
     stages = {}
 
