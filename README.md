@@ -24,8 +24,9 @@ uvx mcpb install sandraschi/demo-vid-mcp
 | Page | Purpose |
 |------|---------|
 | **Dashboard** | Backend status, KPI cards, pipeline overview |
-| **Depot** | Categorized gallery of produced videos — inline player, script viewer, rebuild button |
-| **Generate** | Select target repo by category → optional script edit → generate |
+| **Depot** | Categorized gallery with inline player, script viewer, rebuild and delete buttons |
+| **Generate** | Select target repo by category (8 categories) → optional script edit → generate |
+| **Logs** | Ring-buffer log viewer with level filter and search |
 | **Scripts** | Narration script status across the fleet |
 | **Help** | Architecture, ports, tool reference |
 
