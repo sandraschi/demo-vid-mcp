@@ -7,6 +7,18 @@ interface DepotEntry {
   has_script: boolean; script: string | null;
 }
 
+function getUrlParam(key: string): string {
+  if (typeof window === "undefined") return "";
+  return new URLSearchParams(window.location.search).get(key) || "";
+}
+
+function setUrlParam(key: string, value: string) {
+  const sp = new URLSearchParams(window.location.search);
+  if (value) sp.set(key, value); else sp.delete(key);
+  const qs = sp.toString();
+  window.history.replaceState({}, "", qs ? `?${qs}` : window.location.pathname);
+}
+
 const CATEGORIES: Record<string, string[]> = {
   "Research & Knowledge": ["arxiv-mcp", "calibre-mcp", "llm-txt-mcp", "notebooklm-fleet-mcp", "readly-mcp", "tvtropes-mcp"],
   "Media & Creativity": ["blender-mcp", "gimp-mcp", "inkscape-mcp", "davinci-resolve-mcp", "vroidstudio-mcp", "resonite-mcp", "godot-mcp", "unity3d-mcp", "comfyops-mcp", "suno-mcp", "songgeneration-mcp", "audiotool-nexus-mcp", "virtualdj-mcp", "reaper-mcp", "obs-mcp", "butterchurn-mcp"],
@@ -58,6 +70,24 @@ export default function Depot() {
     return acc;
   }, {} as Record<string, DepotEntry[]>);
 
+  // URL param filter
+  const [repoFilter, setRepoFilter] = useState(() => getUrlParam("repo"));
+  const allRepos = [...new Set(entries.map(e => e.repo))].sort();
+
+  useEffect(() => {
+    if (repoFilter) setUrlParam("repo", repoFilter);
+    else setUrlParam("repo", "");
+  }, [repoFilter]);
+
+  const filteredEntries = repoFilter
+    ? entries.filter(e => e.repo === repoFilter)
+    : entries;
+
+  const filteredGrouped = repoFilter
+    ? (() => { const cat = Object.entries(CATEGORIES).find(([, repos]) => repos.includes(repoFilter))?.[0] || "Other";
+               return { [cat]: filteredEntries }; })()
+    : grouped;
+
   const handleRebuild = useCallback(async (entry: DepotEntry) => {
     setRegenBusy(entry.repo);
     setRegenResult(null);
@@ -79,16 +109,23 @@ export default function Depot() {
 
   return (
     <div data-testid="depot-page" className="p-6 max-w-6xl mx-auto">
-      <div className="flex items-center gap-3 mb-6">
+      <div className="flex items-center gap-3 mb-4">
         <h1 className="text-xl font-bold text-zinc-100">Depot</h1>
         <span className="text-sm text-zinc-500">{entries.length} videos</span>
+        <div className="ml-auto w-48">
+          <select value={repoFilter} onChange={e => setRepoFilter(e.target.value)}
+            className="w-full bg-zinc-800 text-zinc-200 border border-zinc-700 rounded-md px-2 py-1.5 text-xs">
+            <option value="">All repos</option>
+            {allRepos.map(r => <option key={r} value={r}>{r}</option>)}
+          </select>
+        </div>
       </div>
 
       {regenResult && (
         <div className="bg-zinc-800 rounded-md p-3 mb-4 text-sm text-zinc-300 border border-zinc-700">{regenResult}</div>
       )}
 
-      {Object.entries(grouped).map(([cat, vids]) => (
+      {Object.entries(filteredGrouped).map(([cat, vids]) => (
         <div key={cat} className="mb-6">
           <h2 className="text-sm font-semibold text-zinc-400 mb-2 uppercase tracking-wide">
             {cat} ({vids.length})
@@ -165,6 +202,9 @@ export default function Depot() {
         </div>
       ))}
 
+      {filteredEntries.length === 0 && entries.length > 0 && (
+        <div className="text-center text-zinc-600 py-12">No videos for this repo.</div>
+      )}
       {entries.length === 0 && (
         <div className="text-center text-zinc-600 py-12">No videos in depot. Generate one first.</div>
       )}
