@@ -39,13 +39,15 @@ async def generate_voiceover(script: dict, output_dir: str, speech_mcp_url: str 
     async with httpx.AsyncClient(timeout=30) as client:
         for i, text in enumerate(say_segments):
             try:
-                r = await client.post(f"{speech_mcp_url}/api/v1/tts", json={"text": text})
-                if r.status_code == 200:
+                # Use GET /wav endpoint which returns actual audio bytes
+                params = {"text": text, "voice": script.get("voice", "heart")}
+                r = await client.get(f"{speech_mcp_url}/api/v1/tts/wav", params=params)
+                if r.status_code == 200 and len(r.content) > 100:
                     seg_path = Path(output_dir) / f"segment_{i}.wav"
                     seg_path.write_bytes(r.content)
                     audio_paths.append(seg_path)
                 else:
-                    logger.warning("TTS failed for segment %d: HTTP %d", i, r.status_code)
+                    logger.warning("TTS fail seg %d: HTTP %d, %d bytes", i, r.status_code, len(r.content))
             except httpx.RequestError as e:
                 logger.warning("TTS request failed for segment %d: %s", i, e)
 
