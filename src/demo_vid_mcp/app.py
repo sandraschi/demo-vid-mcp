@@ -54,6 +54,47 @@ async def api_generate(body: dict):
     return result
 
 
+@app.get("/api/repos")
+async def list_repos():
+    """Return categorized repos available for demo video generation."""
+    return {
+        "categories": [
+            {
+                "name": "Research & Knowledge",
+                "repos": ["arxiv-mcp", "calibre-mcp", "llm-txt-mcp", "notebooklm-fleet-mcp", "readly-mcp", "tvtropes-mcp"],
+            },
+            {
+                "name": "Media & Creativity",
+                "repos": ["blender-mcp", "gimp-mcp", "inkscape-mcp", "davinci-resolve-mcp", "vroidstudio-mcp", "resonite-mcp", "godot-mcp", "unity3d-mcp", "comfyops-mcp", "suno-mcp", "songgeneration-mcp", "audiotool-nexus-mcp", "virtualdj-mcp", "reaper-mcp", "obs-mcp", "butterchurn-mcp"],
+            },
+            {
+                "name": "Communication",
+                "repos": ["email-mcp", "discord-mcp", "mastodon-mcp", "bluesky-mcp", "alexa-mcp", "telephony-mcp", "chitchat"],
+            },
+            {
+                "name": "Development & DevOps",
+                "repos": ["git-github-mcp", "docker-mcp", "filesystem-mcp", "web-development-mcp", "database-operations-mcp", "browser-mcp", "windows-operations-mcp", "meta_mcp", "fleetwatcher-mcp", "monitoring-mcp"],
+            },
+            {
+                "name": "CAD & Design",
+                "repos": ["freecad-mcp", "qcad-mcp", "kicad-mcp", "chip-design-mcp", "codecad-mcp", "sketchboard-excalidraw-mcp"],
+            },
+            {
+                "name": "Automation & Control",
+                "repos": ["multi-backup-mcp", "devices-mcp", "home-assistant-mcp", "tapo-mcp", "netatmo-weather-mcp", "pdf-mcp", "system-admin-mcp", "disk-usage-mcp"],
+            },
+            {
+                "name": "Robotics & Simulation",
+                "repos": ["yahboom-mcp", "robotics-mcp", "gazebo-mcp", "mujoco-mcp", "ros-mcp", "unitree-mcp", "isaac-mcp", "limx-robotics-mcp"],
+            },
+            {
+                "name": "Productivity & MCP",
+                "repos": ["advanced-memory-mcp", "bookmarks-mcp", "notion-mcp", "obsidian-mcp", "onenote-mcp", "mcp-studio", "depot-mcp", "speech-mcp", "glama-status-mcp", "toolbench-mcp"],
+            },
+        ]
+    }
+
+
 @app.get("/api/videos")
 async def list_videos():
     files = sorted(videos_dir.glob("*.mp4"), key=lambda p: p.stat().st_mtime, reverse=True)
