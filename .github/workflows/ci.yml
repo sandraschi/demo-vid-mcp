@@ -15,9 +15,6 @@ jobs:
         with:
           version: latest
           enable-cache: true
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
       - run: uv sync --group dev
       - run: uv run ruff check src
       - run: uv run ruff format --check src

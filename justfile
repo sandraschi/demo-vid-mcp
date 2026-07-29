@@ -23,8 +23,12 @@ lint:
 fmt:
     uv run ruff format src/
 
-# CI
+# CI (local equivalent — must pass before push)
 ci: lint test
+
+# Full CI including webapp build
+cifull: ci
+    if (Test-Path "webapp\package.json") { Set-Location webapp; bun run build }
 
 # MCPB pack
 mcpb-pack:
