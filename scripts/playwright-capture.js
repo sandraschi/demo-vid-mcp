@@ -35,7 +35,6 @@ async function main() {
             console.error(`HTTP ${resp.status()} at ${step.url} — aborting`);
             process.exit(1);
           }
-          // Verify page has meaningful content, not blank
           const bodyText = await page.evaluate(() => document.body?.innerText?.trim() || "");
           const bodyHtml = await page.evaluate(() => document.body?.innerHTML?.trim() || "");
           if (!bodyHtml || bodyHtml === "<div id=\"root\"></div>" || bodyHtml.length < 10) {
@@ -63,7 +62,6 @@ async function main() {
   await context.close();
   await browser.close();
 
-  // Rename the recorded .webm predictably
   if (fs.existsSync(outputDir)) {
     const files = fs.readdirSync(outputDir).filter(f => f.endsWith(".webm"));
     if (files.length > 0) {

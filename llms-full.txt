@@ -5,9 +5,9 @@
 demo-vid-mcp is a conductor service that orchestrates the fleet to produce repo intro videos. Pipeline stages:
 
 1. **Script** — generate or validate YAML narration script (auto-generated from repo README)
-2. **Auto-start** — start target repo's backend + frontend (Vite)
+2. **Auto-start** — start target repo's backend + frontend (Vite), zombie-kill stale processes first
 3. **Voiceover** — speech-mcp TTS per `say:` segment → .wav
-4. **Record** — Playwright headless Chromium, native .webm recording
+4. **Record** — Playwright headless Chromium, native .webm recording with blank-page detection
 5. **Content gate** — verify page has actual HTML, not blank/error
 6. **Compose** — FFmpeg: video + optional audio + title card → .mp4
 7. **Depot** — store in data/videos/ with narration script for rebuild
@@ -15,22 +15,22 @@ demo-vid-mcp is a conductor service that orchestrates the fleet to produce repo 
 ## Tools
 
 ### demo_vid_generate(repo, script_yaml?, base_url?)
-Full pipeline. auto-starts target, records, voiceovers, composes.
+Full pipeline: auto-starts target repo backend + frontend, stages voiceover + recording in parallel (asyncio), runs content gate on each page, composes final MP4 with title card. Returns path and duration.
 
 ### demo_vid_list(repo?)
-List produced videos. Optional repo filter.
+List produced videos in categorized depot. Optional repo filter. Returns metadata: name, repo, duration, script, created_at.
 
 ### demo_vid_refine(video_name, feedback)
-Re-generate with timing/narration adjustments.
+NOT YET IMPLEMENTED — returns actionable error. Edit narration.yaml directly and re-run generate.
 
 ### demo_vid_script_draft(repo)
-Generate narration script from README + webapp page scan.
+Reads target repo README + scans webapp pages, generates narration YAML with timed steps using an LLM.
 
 ### demo_vid_script_validate(script_yaml)
-Validate YAML structure and timing.
+Validates YAML structure: action types, timing ranges, required fields.
 
 ### demo_vid_help
-List all tools.
+List all tools and usage.
 
 ## Narration script format
 
@@ -51,14 +51,38 @@ steps:
     say: "Open source."
 ```
 
+Supported actions: goto, click, wait, say, scroll, end.
+
 ## Configuration
 
 | Var | Default | Description |
 |-----|---------|-------------|
 | HOST | 127.0.0.1 | Backend bind address |
 | PORT | 11134 | Backend port |
-| SPEECH_MCP_URL | http://127.0.0.1:10909 | speech-mcp TTS endpoint |
+| DEMO_VID_DATA_DIR | data | Video depot directory |
+| DEMO_VID_LOG_LEVEL | info | Log level |
+| DEMO_VID_REPOS_ROOT | D:/Dev/repos | Fleet repos root |
+| SPEECH_MCP_URL | (optional) | speech-mcp TTS endpoint |
+| BLENDER_MCP_URL | (optional) | blender-mcp 3D titles |
+| GIMP_MCP_URL | (optional) | gimp-mcp image ops |
+| DAVINCI_RESOLVE_MCP_URL | (optional) | Resolve composition |
+| STEMS_MCP_URL | (optional) | stems-mcp music |
+| SFX_MCP_URL | (optional) | sfx-mcp sound effects |
+| VFX_MCP_URL | (optional) | vfx-mcp video effects |
 
 ## Ports
 
-11134 (backend), 11135 (frontend).
+11134 (backend), 11135 (frontend). speech-mcp on 10909.
+
+## Webapp Pages
+
+| Page | Purpose |
+|------|---------|
+| Dashboard | Backend status, KPI cards, pipeline overview |
+| Depot | Categorized gallery with inline player, rebuild, delete, insert buttons |
+| Generate | Cascading category/repo selector with Draft Script + Generate buttons |
+| Choreography | Visual script builder — 11 step types, global options, YAML preview |
+| Chat | SOTA chat with personalities, localStorage history, LLM provider, example prompts |
+| Settings | LLM provider probe (Ollama/LM Studio), model selection, backend health, speech-mcp status |
+| Logs | Ring-buffer log viewer with level filter and search |
+| Help | 6-tab reference: overview, architecture, tools, config, fleet, troubleshooting |

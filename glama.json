@@ -1,14 +1,44 @@
 {
+  "$schema": "https://glama.ai/schemas/mcp.json",
+  "name": "demo-vid-mcp",
+  "version": "0.1.0",
+  "description": "Fleet demo video pipeline — record webapp walkthroughs (Playwright), add TTS voiceover (speech-mcp), compose MP4 (FFmpeg). Auto-starts target repos, detects blank pages, stores in categorized depot with rebuild.",
+  "author": "Sandra Schieder",
+  "license": "MIT",
+  "language": "python",
+  "framework": "fastmcp",
+  "type": "mcp_server",
+  "status": "beta",
+  "transport": ["stdio"],
+  "keywords": ["video", "demo", "playwright", "ffmpeg", "tts", "fleet", "fastmcp"],
+  "categories": ["Developer Tools", "Video", "AI Agents"],
+  "homepage": "https://github.com/sandraschi/demo-vid-mcp",
+  "repository": {
+    "url": "https://github.com/sandraschi/demo-vid-mcp",
+    "source": "github"
+  },
+  "packages": [
+    {
+      "registryType": "github",
+      "identifier": "sandraschi/demo-vid-mcp",
+      "transport": {
+        "type": "stdio",
+        "command": "uv",
+        "args": ["run", "python", "-m", "demo_vid_mcp"]
+      }
+    }
+  ],
   "mcpServers": {
     "demo-vid-mcp": {
-      "command": "python",
-      "args": ["-m", "demo_vid_mcp"],
-      "env": { "PYTHONPATH": "${workspaceFolder}" },
-      "capabilities": { "tools": { "enabled": true } },
-      "metadata": {
-        "version": "0.1.0",
-        "tags": ["video", "pipeline", "fleet", "demo"],
-        "homepage": "https://github.com/sandraschi/demo-vid-mcp"
+      "name": "demo-vid-mcp",
+      "command": "uv",
+      "args": ["run", "python", "-m", "demo_vid_mcp"],
+      "env": {},
+      "description": "Stdio MCP (default for Claude Desktop / Cursor).",
+      "capabilities": {
+        "tools": { "enabled": true, "listChanged": true },
+        "resources": { "enabled": false },
+        "prompts": { "enabled": false }
       }
     }
   }
