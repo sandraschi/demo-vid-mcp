@@ -28,6 +28,12 @@ async def record(script: dict, output_dir: str, theme: str = "dark") -> dict:
     """
     steps = script.get("steps", [])
 
+    # Nothing to record — succeed without spawning the browser. This keeps
+    # the empty-script path hermetic (no node, no playwright, no Chromium),
+    # so the pipeline works even on machines without the browser installed.
+    if not steps:
+        return {"success": True, "video_path": None, "message": "No steps — nothing to record"}
+
     script_dir = Path(__file__).resolve().parents[3] / "scripts"
     capture_js = script_dir / "playwright-capture.js"
     if not capture_js.exists():
