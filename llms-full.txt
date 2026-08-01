@@ -14,8 +14,9 @@ demo-vid-mcp is a conductor service that orchestrates the fleet to produce repo 
 
 ## Tools
 
-### demo_vid_generate(repo, script_yaml?, base_url?)
+### demo_vid_generate(repo, script_yaml?, base_url?, theme="dark")
 Full pipeline: auto-starts target repo backend + frontend, stages voiceover + recording in parallel (asyncio), runs content gate on each page, composes final MP4 with title card. Returns path and duration.
+`theme="light"` records a bright demo — the capture script forces the target webapp's theme class (handles `.dark` toggling AND persisted localStorage light-mode keys) before navigation; default `"dark"` matches fleet identity. See `chat_skills_prefab_standard.md` §7.1.
 
 ### demo_vid_list(repo?)
 List produced videos in categorized depot. Optional repo filter. Returns metadata: name, repo, duration, script, created_at.
@@ -73,6 +74,13 @@ Supported actions: goto, click, wait, say, scroll, end.
 ## Ports
 
 11134 (backend), 11135 (frontend). speech-mcp on 10909.
+
+## Dependencies
+
+- Python >=3.13 (audioop-lts constraint), uv
+- Runtime: fastmcp, httpx, pyyaml, fastapi, starlette, uvicorn, pydub + audioop-lts
+- Dev: pytest, pytest-asyncio, ruff, pyright, pre-commit
+- External: Playwright (recording), FFmpeg (composition), speech-mcp (voiceover)
 
 ## Webapp Pages
 

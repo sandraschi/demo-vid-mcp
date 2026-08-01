@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.1 (2026-08-01)
+
+- `demo_vid_generate(theme=...)`: `"dark"` (default, fleet identity) or `"light"` (bright demo). Capture script forces the target webapp's theme class before navigation — handles both `.dark` toggling and persisted localStorage light-mode keys.
+- `pydub` added as a runtime dependency (audio merging) + `audioop-lts` (pydub needs `audioop`, removed in Python 3.13).
+- `requires-python` raised to `>=3.13` (audioop-lts constraint).
+- `pyright` added to dev deps; `ctx: Context | None` typing; pydub import moved to module top (was guarded try/except).
+
 ## 0.1.0-beta (2026-07-29)
 
 - Initial scaffold: pipeline tools, FastAPI + FastMCP backend, Vite React webapp

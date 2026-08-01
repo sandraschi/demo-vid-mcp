@@ -3,7 +3,7 @@
 <p align="center">
   <a href="https://github.com/casey/just"><img src="https://img.shields.io/badge/just-ready_to_go-7c5cfc?style=flat-square&logo=just&logoColor=white" alt="Just"></a>
   <a href="https://github.com/astral-sh/ruff"><img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json" alt="Ruff"></a>
-  <a href="https://python.org"><img src="https://img.shields.io/badge/Python-3.12+-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python"></a>
+  <a href="https://python.org"><img src="https://img.shields.io/badge/Python-3.13+-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python"></a>
   <a href="https://github.com/PrefectHQ/fastmcp"><img src="https://img.shields.io/badge/FastMCP-3.4-7c5cfc?style=flat-square" alt="FastMCP"></a>
   <a href="https://glama.ai/mcp/servers"><img src="https://img.shields.io/badge/Glama-MCP_server-7c5cfc?style=flat-square" alt="Glama"></a>
   <a href="https://github.com/tailwindlabs/tailwindcss"><img src="https://img.shields.io/badge/Tailwind-4-06b6d4?style=flat-square&logo=tailwindcss&logoColor=white" alt="Tailwind"></a>
@@ -28,7 +28,7 @@ uvx mcpb install sandraschi/demo-vid-mcp
 
 | Tool | Description |
 |------|-------------|
-| `demo_vid_generate(repo)` | Full pipeline: auto-start target webapp → record (Playwright) → voiceover (speech-mcp) → compose (FFmpeg) → MP4 |
+| `demo_vid_generate(repo, theme="dark")` | Full pipeline: auto-start target webapp → record (Playwright) → voiceover (speech-mcp) → compose (FFmpeg) → MP4. `theme="light"` forces the target webapp's light mode for bright demos (default `"dark"` matches fleet identity). |
 | `demo_vid_script_draft(repo)` | Generate a narration YAML from the target repo's README and webapp page structure |
 | `demo_vid_script_validate(yaml)` | Validate a narration script's structure and timing |
 | `demo_vid_list(repo?)` | List produced videos with metadata |
@@ -52,6 +52,10 @@ uvx mcpb install sandraschi/demo-vid-mcp
 
 `demo_vid_generate` automatically starts the target repo's backend and Vite frontend before recording. Zombie-kills stale processes first. No manual setup — the pipeline scans for `start.ps1` and `webapp/` directories.
 
+## Themes
+
+Recording is dark-mode by default (fleet identity). Pass `theme="light"` to record a bright demo — the capture script forces the target webapp's theme class (handles both `.dark` toggling and persisted localStorage light-mode keys) before navigation, per `chat_skills_prefab_standard.md` §7.1.
+
 ## Fleet Services
 
 Required: speech-mcp (voiceover), Playwright (recording), FFmpeg (composition).
@@ -74,7 +78,7 @@ See [WEBAPP_PORTS.md](https://github.com/sandraschi/mcp-central-docs/blob/main/o
 
 ## Requirements
 
-- Python 3.12+ with `uv`
+- Python 3.13+ with `uv`
 - FFmpeg (for composition)
 - speech-mcp (for voiceover)
 - Playwright (for recording, auto-installed)

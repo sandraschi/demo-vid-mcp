@@ -2,7 +2,7 @@
 name = "demo-vid-mcp"
 version = "0.1.0"
 description = "Fleet intro video pipeline — record, narrate, compose, refine."
-requires-python = ">=3.12"
+requires-python = ">=3.13"
 dependencies = [
     "fastmcp>=3.4.4,<4",
     "prefab-ui>=0.14.0",
@@ -11,6 +11,8 @@ dependencies = [
     "fastapi>=0.115.0",
     "starlette>=1.0.1",
     "uvicorn>=0.29.0",
+    "pydub>=0.25.1",
+    "audioop-lts>=0.2.1",  # pydub needs audioop, removed in Python 3.13 — LTS backport
 ]
 
 [project.scripts]
@@ -36,5 +38,6 @@ dev = [
     "pytest>=7",
     "pytest-asyncio>=0.23",
     "ruff>=0.16.0,<0.17",
+    "pyright>=1.1.411",
     "pre-commit>=4.6.1",
 ]

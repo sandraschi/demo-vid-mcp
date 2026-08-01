@@ -11,13 +11,17 @@ from pathlib import Path
 logger = logging.getLogger("demo-vid-mcp.recorder")
 
 
-async def record(script: dict, output_dir: str) -> dict:
+async def record(script: dict, output_dir: str, theme: str = "dark") -> dict:
     """Run Playwright to capture a .webm from a narration script.
 
     Uses Playwright's native video recording. Checks process exit code
     BEFORE looking for output files — prevents stale files from a
     previous run being reported as success. Kills subprocess on timeout
     to prevent hanging the pipeline.
+
+    theme: "dark" (fleet default) or "light" — passed to the capture
+    script, which forces the theme class on the target page so demo
+    videos match the requested mode.
 
     ## Return Format
     {"success": bool, "video_path": str | None, "message": str}
@@ -37,12 +41,13 @@ async def record(script: dict, output_dir: str) -> dict:
     steps_file.write_text(json.dumps(steps), encoding="utf-8")
     output_base = str(Path(output_dir) / "recording")
 
-    logger.info("Starting Playwright capture (%d steps)...", len(steps))
+    logger.info("Starting Playwright capture (%d steps, theme=%s)...", len(steps), theme)
     proc = await asyncio.create_subprocess_exec(
         "node",
         str(capture_js),
         str(steps_file),
         output_base,
+        theme,
         stdout=subprocess.DEVNULL,
         stderr=subprocess.PIPE,
     )

@@ -1,8 +1,11 @@
 /**
  * Playwright capture script for demo-vid-mcp.
- * Usage: node scripts/playwright-capture.js <steps.json> <output-base>
+ * Usage: node scripts/playwright-capture.js <steps.json> <output-base> [theme]
  *
  * Accepts a JSON array of steps, records browser interactions as .webm.
+ * theme: "dark" (default) | "light" — forces the fleet theme class on the
+ * page so demo videos match the requested mode (see chat_skills_prefab_standard
+ * §7.1: webapps with the optional light toggle must be forced before capture).
  * Fails if the page appears blank or returns an error status.
  */
 const { chromium } = require("playwright");
@@ -10,11 +13,12 @@ const fs = require("fs");
 const path = require("path");
 
 async function main() {
-  const [stepsPath, outputBase] = process.argv.slice(2);
+  const [stepsPath, outputBase, themeArg] = process.argv.slice(2);
   if (!stepsPath || !outputBase) {
-    console.error("Usage: node playwright-capture.js <steps.json> <output-base>");
+    console.error("Usage: node playwright-capture.js <steps.json> <output-base> [dark|light]");
     process.exit(1);
   }
+  const theme = themeArg === "light" ? "light" : "dark";
 
   const steps = JSON.parse(fs.readFileSync(stepsPath, "utf8"));
   const outputDir = path.dirname(outputBase);
@@ -25,6 +29,20 @@ async function main() {
     recordVideo: { dir: outputDir, size: { width: 1280, height: 720 } },
   });
   const page = await context.newPage();
+
+  // Force the requested theme on every navigation (fleet dark default, or
+  // light for bright videos). Handles both the class toggle and localStorage
+  // persistence used by fleet light-mode toggles.
+  await page.addInitScript((mode) => {
+    const dark = mode === "dark";
+    document.documentElement.classList.toggle("dark", dark);
+    try {
+      const key = "ocmcp-light-mode";
+      if (localStorage.getItem(key) !== null) {
+        localStorage.setItem(key, dark ? "0" : "1");
+      }
+    } catch { /* cross-origin / privacy mode */ }
+  }, theme);
 
   for (const step of steps) {
     try {

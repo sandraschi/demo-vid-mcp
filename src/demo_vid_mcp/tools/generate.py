@@ -172,18 +172,24 @@ async def demo_vid_generate(
             description="Target webapp URL (e.g. 'http://127.0.0.1:10975'). Auto-detected from port registry if omitted."
         ),
     ] = None,
-    ctx: Context = None,
+    theme: Annotated[
+        str, Field(description="Video theme: 'dark' (fleet default) or 'light' (bright demo).")
+    ] = "dark",
+    ctx: Context | None = None,
 ) -> dict:
     """Generate a demo video for a fleet repo.
 
     Runs the full pipeline: validate script → voiceover (speech-mcp) → record (Playwright) → compose (FFmpeg).
     Stages run in parallel where possible. Output saved to data/videos/.
+    theme="light" records the target webapp with its light-mode toggle forced
+    on (bright demo); default "dark" matches fleet identity.
 
     ## Return Format
     {"success": bool, "message": str, "video_path": str | None, "stages": {...}}
 
     ## Examples
     await demo_vid_generate(repo="chitchat")
+    await demo_vid_generate(repo="chitchat", theme="light")
     await demo_vid_generate(repo="chitchat", base_url="http://127.0.0.1:10975")
     """
     if script_yaml:
@@ -225,7 +231,7 @@ async def demo_vid_generate(
     voice_task = asyncio.create_task(
         generate_voiceover(script, str(video_dir), config.speech_mcp_url)
     )
-    record_task = asyncio.create_task(record(script, str(video_dir)))
+    record_task = asyncio.create_task(record(script, str(video_dir), theme=theme))
 
     voice_result = await voice_task
     stages["voiceover"] = voice_result

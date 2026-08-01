@@ -6,6 +6,7 @@ import logging
 from pathlib import Path
 
 import httpx
+from pydub import AudioSegment
 
 logger = logging.getLogger("demo-vid-mcp.voiceover")
 
@@ -27,13 +28,6 @@ async def generate_voiceover(script: dict, output_dir: str, speech_mcp_url: str 
     say_segments = [s["say"] for s in steps if s.get("say")]
     if not say_segments:
         return {"success": True, "audio_path": None, "message": "No speech segments — silent video"}
-
-    try:
-        from pydub import AudioSegment
-
-        has_pydub = True
-    except ImportError:
-        has_pydub = False
 
     audio_paths = []
     async with httpx.AsyncClient(timeout=30) as client:
@@ -63,7 +57,7 @@ async def generate_voiceover(script: dict, output_dir: str, speech_mcp_url: str 
             ],
         }
 
-    if has_pydub and len(audio_paths) > 1:
+    if len(audio_paths) > 1:
         combined = AudioSegment.empty()
         for p in audio_paths:
             combined += AudioSegment.from_file(p)
