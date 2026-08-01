@@ -18,15 +18,15 @@ jobs:
       - run: uv sync --group dev
       - run: uv run ruff check src
       - run: uv run ruff format --check src
-      - name: Unit tests (no live backend, no browser)
-        run: uv run pytest -q --tb=short tests/ --ignore=tests/test_e2e.py
       - name: Install Playwright Chromium
         run: |
           npx playwright install chromium
+      - name: Unit tests (no live backend)
+        run: uv run pytest -q --tb=short tests/ --ignore=tests/test_e2e.py
       - name: E2E tests (with backend)
         run: |
           $job = Start-Job -ScriptBlock { uv run uvicorn demo_vid_mcp.app:app --host 127.0.0.1 --port 11134 --log-level warning }
           Start-Sleep 5
-          uv run pytest -q --tb=short tests/test_e2e.py tests/test_pipeline.py::test_recorder_empty_steps
+          uv run pytest -q --tb=short tests/test_e2e.py
           Stop-Job $job -ErrorAction SilentlyContinue
           Remove-Job $job -ErrorAction SilentlyContinue
