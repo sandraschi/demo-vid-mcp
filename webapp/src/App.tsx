@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Video, SquareStack, FileText, ListOrdered, HelpCircle, LayoutDashboard, Warehouse, Terminal, Clapperboard, Settings, MessageSquare } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Video, SquareStack, FileText, ListOrdered, HelpCircle, LayoutDashboard, Warehouse, Terminal, Clapperboard, Settings, MessageSquare, Moon, Sun } from "lucide-react";
 import Dashboard from "./pages/Dashboard";
 import Depot from "./pages/Depot";
 import Detail from "./pages/Detail";
@@ -31,6 +31,26 @@ export default function App() {
   const [page, setPage] = useState<Page>("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
+  // EXPERIMENTAL light mode (invert hack). Not fleet standard - see index.css.
+  // Toggling `.dark` off the root flips the invert filter; persisted so the
+  // choice survives reloads. Delete this + the CSS block to revert.
+  const [light, setLight] = useState(() => {
+    try {
+      return localStorage.getItem("demo-vid-light-mode") === "1";
+    } catch {
+      return false;
+    }
+  });
+
+  useEffect(() => {
+    document.documentElement.classList.toggle("dark", !light);
+    try {
+      localStorage.setItem("demo-vid-light-mode", light ? "1" : "0");
+    } catch {
+      // ignore storage errors
+    }
+  }, [light]);
+
   const PageComponent = {
     dashboard: Dashboard,
     depot: Depot,
@@ -50,7 +70,16 @@ export default function App() {
       <aside data-testid="sidebar" className={`${sidebarOpen ? "w-56" : "w-16"} bg-zinc-950 border-r border-zinc-800 flex flex-col transition-all duration-200`}>
         <div className="p-4 flex items-center gap-3 border-b border-zinc-800">
           {sidebarOpen && <span className="font-bold text-zinc-100 text-lg">demo-vid</span>}
-          <button onClick={() => setSidebarOpen(!sidebarOpen)} className="ml-auto text-zinc-400 hover:text-white cursor-pointer" aria-label="Toggle sidebar">
+          <button
+            type="button"
+            onClick={() => setLight((v) => !v)}
+            className="ml-auto text-zinc-400 hover:text-white cursor-pointer"
+            aria-label="Toggle light mode (experimental)"
+            title={light ? "Switch to dark (experimental light mode)" : "Switch to light (experimental, ugly)"}
+          >
+            {light ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
+          </button>
+          <button onClick={() => setSidebarOpen(!sidebarOpen)} className="text-zinc-400 hover:text-white cursor-pointer" aria-label="Toggle sidebar">
             <SquareStack className="h-4 w-4" />
           </button>
         </div>

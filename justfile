@@ -23,7 +23,7 @@ lint:
 fmt:
     uv run ruff format src/
 
-# CI (local equivalent — must pass before push)
+# --- CI  local equivalent  must pass before push ---
 ci: lint test
 
 # Full CI including webapp build

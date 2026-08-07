@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Plus, Trash2, ArrowUp, ArrowDown, Eye, Send, Play, Monitor, Type, Volume2, MousePointer, Timer, Music, Subtitles, Clapperboard, Wand2 } from "lucide-react";
+import { Trash2, ArrowUp, ArrowDown, Eye, Send, Play, Monitor, Type, Volume2, MousePointer, Timer, Music, Subtitles, Clapperboard, Wand2 } from "lucide-react";
 
 type StepType = "goto" | "capture_window" | "click" | "type" | "wait" | "say" | "sfx" | "transition" | "text_overlay" | "obs_scene" | "end";
 

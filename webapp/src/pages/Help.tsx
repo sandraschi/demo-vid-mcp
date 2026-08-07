@@ -98,7 +98,7 @@ export default function Help() {
               <div><span className="text-amber-400 font-medium">3. Voiceover</span> — speech-mcp TTS per <code className="text-zinc-300">say:</code> segment, concatenated to .wav. Runs parallel with recording.</div>
               <div><span className="text-amber-400 font-medium">4. Record</span> — Playwright headless Chromium, native .webm recording. Content gate checks for blank pages.</div>
               <div><span className="text-amber-400 font-medium">5. Compose</span> — FFmpeg: video + audio + title card + optional subtitle burn-in → MP4.</div>
-              <div><span className="text-amber-400 font-medium">6. Depot</span> — Store in <code className="text-zinc-300">data/videos/{repo}/</code> with narration.yaml for rebuild.</div>
+              <div><span className="text-amber-400 font-medium">6. Depot</span> — Store in <code className="text-zinc-300">data/videos/&lt;repo&gt;/</code> with narration.yaml for rebuild.</div>
             </div>
           </div>
           <div className="bg-zinc-900 rounded-lg p-5 border border-zinc-800">
@@ -134,9 +134,9 @@ export default function Help() {
             <div key={t.name} className="bg-zinc-900 rounded-lg p-4 border border-zinc-800">
               <div className="text-sm font-semibold text-amber-300 font-mono mb-1">{t.name}</div>
               <div className="text-sm text-zinc-400 mb-2">{t.desc}</div>
-              {t.args.length > 0 && (
+              {t.args && t.args.length > 0 && (
                 <div className="text-xs text-zinc-500 space-y-0.5">
-                  {t.args.map(a => <div key={a}>• {a}</div>)}
+                  {t.args.map(a => <div key={a}>{a}</div>)}
                 </div>
               )}
             </div>
