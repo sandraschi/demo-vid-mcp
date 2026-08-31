@@ -1,4 +1,4 @@
-"""Entry point — dual transport: stdio (MCP) or HTTP (FastAPI + webapp)."""
+"""Entry point - dual transport: stdio (MCP) or HTTP (FastAPI + webapp)."""
 
 import asyncio
 import os
