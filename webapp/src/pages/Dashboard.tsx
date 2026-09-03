@@ -1,27 +1,28 @@
-import { Camera, Film, Monitor, Music } from "lucide-react";
+import { Camera, Film, Loader2, Monitor, Music, RotateCw } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { useBackendStore } from "../store/backend";
 
 export default function Dashboard() {
   const [stats, setStats] = useState<{
     videos_served: number;
     version: string;
   } | null>(null);
-  const [backendOk, setBackendOk] = useState<boolean | null>(null);
+  const backendOk = useBackendStore((s) => s.backendOk);
+  const restarting = useBackendStore((s) => s.restarting);
+  const restart = useBackendStore((s) => s.restart);
   const [speechOk, setSpeechOk] = useState<boolean | null>(null);
   const [videoCount, setVideoCount] = useState(0);
 
   const refresh = useCallback(async () => {
+    useBackendStore.getState().refresh();
     try {
       const r = await fetch("/api/health");
       if (r.ok) {
         const d = await r.json();
         setStats(d);
-        setBackendOk(true);
-      } else {
-        setBackendOk(false);
       }
     } catch {
-      setBackendOk(false);
+      /* backend status already tracked by the shared store */
     }
 
     try {
@@ -48,25 +49,37 @@ export default function Dashboard() {
 
   return (
     <div data-testid="dashboard" className="p-6 max-w-5xl mx-auto">
-      <div className="flex items-center gap-3 mb-6">
-        <Film className="h-8 w-8 text-amber-400" />
-        <div>
-          <h1 className="text-2xl font-bold text-zinc-100">demo-vid-mcp</h1>
-          <p className="text-sm text-zinc-400">
-            Fleet intro video pipeline {stats?.version ? `v${stats.version}` : "v0.2.0"}
-          </p>
+      <div
+        data-testid="dashboard-hero"
+        className="mb-6 p-5 rounded-lg bg-zinc-900 border border-zinc-800"
+      >
+        <div className="flex items-center gap-3">
+          <Film className="h-8 w-8 text-amber-400 shrink-0" />
+          <div>
+            <h1 className="text-2xl font-bold text-zinc-100">demo-vid-mcp</h1>
+            <p className="text-sm text-zinc-300">
+              Fleet intro video pipeline v{stats?.version ?? "0.3.0"}
+            </p>
+          </div>
+          <div className="ml-auto flex items-center gap-2">
+            <div
+              data-testid="backend-dot"
+              className={`w-2 h-2 rounded-full ${
+                backendOk === null ? "bg-zinc-500" : backendOk ? "bg-green-500" : "bg-red-500"
+              }`}
+            />
+            <span className="text-sm text-zinc-300">
+              {backendOk === null ? "Connecting..." : backendOk ? "Connected" : "Offline"}
+            </span>
+          </div>
         </div>
-        <div className="ml-auto flex items-center gap-2">
-          <div
-            data-testid="backend-dot"
-            className={`w-2 h-2 rounded-full ${
-              backendOk === null ? "bg-zinc-500" : backendOk ? "bg-green-500" : "bg-red-500"
-            }`}
-          />
-          <span className="text-sm text-zinc-400">
-            {backendOk === null ? "Connecting..." : backendOk ? "Connected" : "Offline"}
-          </span>
-        </div>
+        <p className="mt-3 text-sm text-zinc-300 leading-relaxed">
+          Turns a script into an intro video: Playwright records the target UI, speech-mcp voices
+          the narration, and FFmpeg composes the final MP4. New here? Open{" "}
+          <span className="font-semibold text-zinc-100">Generate</span> to render your first video
+          from a script, or <span className="font-semibold text-zinc-100">Scripts</span> to write
+          one first.
+        </p>
       </div>
 
       {backendOk === false && (
@@ -85,13 +98,30 @@ export default function Dashboard() {
               to enable video generation and API routes.
             </p>
           </div>
-          <button
-            type="button"
-            onClick={() => refresh()}
-            className="px-3 py-1.5 bg-red-900/60 hover:bg-red-800 text-xs text-white rounded border border-red-700 cursor-pointer shrink-0 ml-4"
-          >
-            Retry Connection
-          </button>
+          <div className="flex items-center gap-2 shrink-0 ml-4">
+            <button
+              type="button"
+              onClick={() => refresh()}
+              className="px-3 py-1.5 bg-red-900/60 hover:bg-red-800 text-sm text-white rounded border border-red-700 cursor-pointer"
+            >
+              Retry Connection
+            </button>
+            <button
+              type="button"
+              data-testid="restart-backend"
+              onClick={() => restart()}
+              disabled={restarting}
+              className="px-3 py-1.5 bg-red-900/60 hover:bg-red-800 disabled:opacity-60 disabled:cursor-not-allowed text-sm text-white rounded border border-red-700 cursor-pointer flex items-center gap-1.5"
+              title="Restart the bundled backend (Tauri desktop app only)"
+            >
+              {restarting ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <RotateCw className="h-3.5 w-3.5" />
+              )}
+              {restarting ? "Restarting..." : "Restart Backend"}
+            </button>
+          </div>
         </div>
       )}
 
@@ -130,9 +160,7 @@ export default function Dashboard() {
             <Film className="h-4 w-4" />
             <span className="text-sm">Pipeline</span>
           </div>
-          <span className="text-2xl font-bold text-amber-400">
-            {stats?.version ? `v${stats.version}` : "v0.2"}
-          </span>
+          <span className="text-2xl font-bold text-amber-400">v{stats?.version ?? "0.3.0"}</span>
         </div>
       </div>
 

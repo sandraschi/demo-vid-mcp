@@ -25,6 +25,7 @@ import Logs from "./pages/Logs";
 import Queue from "./pages/Queue";
 import Scripts from "./pages/Scripts";
 import SettingsPage from "./pages/Settings";
+import { useBackendStore } from "./store/backend";
 
 const NAV = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -44,6 +45,14 @@ type Page = (typeof NAV)[number]["id"];
 export default function App() {
   const [page, setPage] = useState<Page>("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const backendOk = useBackendStore((s) => s.backendOk);
+  const backendVersion = useBackendStore((s) => s.version);
+
+  // Global backend connection watcher: Tauri "backend-status" event +
+  // HTTP poll fallback (steady 10s when healthy, exponential backoff
+  // 1s/2s/4s/8s/16s while unreachable). Lives in the store, not per-page
+  // state, so every page sees the same connection status.
+  useEffect(() => useBackendStore.getState().init(), []);
 
   const [zoom, setZoom] = useState(() => {
     try {
@@ -161,8 +170,25 @@ export default function App() {
             </button>
           ))}
         </nav>
-        <div className="p-3 border-t border-zinc-800 text-xs text-zinc-500 flex justify-between">
-          {sidebarOpen && <span>v0.2.0</span>}
+        <div className="p-3 border-t border-zinc-800 text-sm text-zinc-300 flex items-center justify-between">
+          {sidebarOpen && (
+            <span
+              data-testid="sidebar-backend-dot"
+              className="flex items-center gap-1.5"
+              title={
+                backendOk === null
+                  ? "Connecting..."
+                  : backendOk
+                    ? "Backend connected"
+                    : "Backend offline"
+              }
+            >
+              <span
+                className={`w-2 h-2 rounded-full ${backendOk === null ? "bg-zinc-500" : backendOk ? "bg-green-500" : "bg-red-500"}`}
+              />
+              v{backendVersion ?? "0.3.0"}
+            </span>
+          )}
           {sidebarOpen && <span>{Math.round(zoom * 100)}%</span>}
         </div>
       </aside>
