@@ -12,7 +12,7 @@ Demo video pipeline for fleet repos. Orchestrates Playwright recording, speech-m
 | `src/demo_vid_mcp/app.py` | FastAPI REST app (webapp backend) |
 | `src/demo_vid_mcp/pipeline/` | Pipeline stages (recorder, voiceover, composer, script) |
 | `src/demo_vid_mcp/tools/` | MCP tool implementations |
-| `webapp/src/App.tsx` | SPA with 7 pages |
+| `webapp/src/App.tsx` | SPA with 10 nav entries / 12 page components |
 
 ## Ports
 

@@ -22,7 +22,9 @@ Full pipeline: auto-starts target repo backend + frontend, stages voiceover + re
 List produced videos in categorized depot. Optional repo filter. Returns metadata: name, repo, duration, script, created_at.
 
 ### demo_vid_refine(video_name, feedback)
-NOT YET IMPLEMENTED — returns actionable error. Edit narration.yaml directly and re-run generate.
+Locates the existing narration.yaml for video_name, parses feedback for wait/timing,
+voice, say/narrate, or append-step adjustments via regex, mutates and saves the script,
+then re-runs demo_vid_generate against the updated script.
 
 ### demo_vid_script_draft(repo)
 Reads target repo README + scans webapp pages, generates narration YAML with timed steps using an LLM.
