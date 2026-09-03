@@ -26,6 +26,9 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages = ["src/demo_vid_mcp"]
 
+[tool.hatch.build.targets.sdist]
+include = ["src/demo_vid_mcp", "run_server.py", "pyproject.toml", "README.md"]
+
 [tool.ruff]
 line-length = 100
 target-version = "py312"
