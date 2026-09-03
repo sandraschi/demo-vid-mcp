@@ -32,7 +32,7 @@ ci: lint typecheck test
 
 # Run E2E tests against local backend
 test-e2e:
-    uv run pytest -q --tb=short tests/test_e2e.py
+    uv run pytest -q --tb=short tests/test_e2e.py --no-cov
 
 # Full CI including webapp build
 cifull: ci
