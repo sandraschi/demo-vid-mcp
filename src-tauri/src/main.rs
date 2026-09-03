@@ -29,11 +29,22 @@ fn main() {
             // mcp_client::register_mcp_clients
         ])
         .setup(|app| {
+            // spawn_backend() is a blocking function (free_port() alone does
+            // several sequential PowerShell subprocess calls, each ~0.3-0.8s
+            // to spin up, up to 240s worst case) - calling it directly here
+            // blocks whatever thread runs setup(), which froze the window's
+            // message pump for the whole call (Windows showed it as a
+            // "(Not Responding)" Ghost window until spawn_backend returned).
+            // Run it on its own OS thread so setup() returns immediately and
+            // the window starts pumping messages right away.
             let handle = app.handle().clone();
-            if let Err(e) = spawn_backend(handle.clone(), app.state::<BackendProcess>().inner()) {
-                eprintln!("Backend error: {e}");
-                let _ = handle.emit("backend-status", format!("error: {e}"));
-            }
+            std::thread::spawn(move || {
+                let state = handle.state::<BackendProcess>();
+                if let Err(e) = spawn_backend(handle.clone(), state.inner()) {
+                    eprintln!("Backend error: {e}");
+                    let _ = handle.emit("backend-status", format!("error: {e}"));
+                }
+            });
             Ok(())
         })
         .build(tauri::generate_context!())

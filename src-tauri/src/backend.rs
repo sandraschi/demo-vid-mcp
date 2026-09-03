@@ -105,15 +105,29 @@ pub fn materialize_backend(app: &AppHandle) -> Result<PathBuf, String> {
 /// never a blind `taskkill` sweep of unrelated processes (see
 /// TAURI_PRODUCTION_PITFALLS.md #608: this exact pattern once killed Docker
 /// Desktop's wslrelay because it happened to be on the target port).
+///
+/// `free_port` runs from *inside* the currently-running `demo-vid-mcp-native`
+/// process (spawn_backend is called from setup(), i.e. on the process's own
+/// startup) — so a plain `Stop-Process -Name 'demo-vid-mcp-native'` matches
+/// and kills the caller itself (process-name matching has no "not me"
+/// concept). Every native-image kill below excludes `$env:PID_SELF` for this
+/// reason; the backend-image kill needs no such exclusion since
+/// demo-vid-mcp-backend.exe is always a distinct child process.
 fn free_port(port: u16) -> bool {
     #[cfg(windows)]
     {
-        let img_kill = "Stop-Process -Name 'demo-vid-mcp-backend' -Force -ErrorAction SilentlyContinue; \
-             Stop-Process -Name 'demo-vid-mcp-native' -Force -ErrorAction SilentlyContinue; \
+        let self_pid = std::process::id();
+        let img_kill = format!(
+            "Stop-Process -Name 'demo-vid-mcp-backend' -Force -ErrorAction SilentlyContinue; \
+             Get-Process -Name 'demo-vid-mcp-native' -ErrorAction SilentlyContinue \
+             | Where-Object {{ $_.Id -ne {self_pid} }} | Stop-Process -Force -ErrorAction SilentlyContinue; \
              taskkill /F /IM demo-vid-mcp-backend.exe /T 2>$null; \
-             taskkill /F /IM demo-vid-mcp-native.exe /T 2>$null";
+             Get-Process -Name 'demo-vid-mcp-native' -ErrorAction SilentlyContinue \
+             | Where-Object {{ $_.Id -ne {self_pid} }} \
+             | ForEach-Object {{ taskkill /F /PID $_.Id /T 2>$null }}"
+        );
         let _ = Command::new("powershell.exe")
-            .args(["-NoProfile", "-Command", img_kill])
+            .args(["-NoProfile", "-Command", &img_kill])
             .stdout(Stdio::null()).stderr(Stdio::null())
             .status();
 
@@ -143,7 +157,7 @@ fn free_port(port: u16) -> bool {
 
             if i == 5 {
                 let _ = Command::new("powershell.exe")
-                    .args(["-NoProfile", "-Command", img_kill])
+                    .args(["-NoProfile", "-Command", &img_kill])
                     .status();
                 let _ = Command::new("powershell.exe")
                     .args(["-NoProfile", "-Command", &port_kill])
