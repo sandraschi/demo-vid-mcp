@@ -66,6 +66,9 @@ if (-not (Test-Path $src)) { throw "Backend exe not found at $src - PyInstaller 
 Copy-Item $src "$ResourceDir\${RepoName}-backend.exe" -Force
 Copy-Item $src "$DevDir\${RepoName}-backend-$Triple.exe" -Force
 Write-Host "  Backend exe: $((Get-Item $src).Length / 1MB) MB" -ForegroundColor Green
+if (Test-Path "$Root\.env.example") {
+    Copy-Item "$Root\.env.example" "$ResourceDir\.env.example" -Force
+}
 
 # Step 4: Single NSIS installer
 Write-Host "-> [4/4] Tauri NSIS bundle..." -ForegroundColor Yellow

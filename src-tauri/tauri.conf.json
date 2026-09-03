@@ -1,8 +1,9 @@
 {
     "$schema": "https://schema.tauri.app/config/2",
     "productName": "Demo Vid MCP",
-    "version": "0.1.0",
+    "version": "0.3.0",
     "identifier": "com.sandraschi.demo-vid-mcp",
+
     "build": {
         "frontendDist": "../webapp/dist"
     },
@@ -27,7 +28,8 @@
         "targets": ["nsis"],
         "icon": ["icons/icon.png", "icons/icon.ico"],
         "resources": [
-            "resources/demo-vid-mcp-backend.exe"],
+            "resources/demo-vid-mcp-backend.exe",
+            "resources/.env.example"],
         "windows": {
             "webviewInstallMode": {
                 "type": "skip"
@@ -40,4 +42,3 @@
     },
     "plugins": {}
 }
-

@@ -14,12 +14,12 @@ use tauri::{AppHandle, Emitter, Manager};
 pub struct BackendProcess(pub Mutex<Option<Child>>);
 
 // -- PER-REPO: Customize these constants --
-const BACKEND_NAME: &str = "{REPO}-backend.exe";
-const BACKEND_PORT: u16 = {BACKEND_PORT};
-const BACKEND_TAG: &str = "{REPO}-backend-{TRIPLE}.exe";
+const BACKEND_NAME: &str = "demo-vid-mcp-backend.exe";
+const BACKEND_PORT: u16 = 11134;
+const BACKEND_TAG: &str = "demo-vid-mcp-backend-x86_64-pc-windows-msvc.exe";
 const ENV_PORT: &str = "PORT";
 const ENV_HOST: &str = "HOST";
-const ENV_TAURI: &str = "{REPO_UPPER}_TAURI";
+const ENV_TAURI: &str = "DEMO_VID_MCP_TAURI";
 
 fn dev_backend_path() -> Option<PathBuf> {
     if !cfg!(debug_assertions) {
@@ -100,18 +100,18 @@ pub fn materialize_backend(app: &AppHandle) -> Result<PathBuf, String> {
 /// Multi-layer kill + poll: image-name kill (catches zombies not holding the
 /// port), then port-holder kill (precise PID kill via the port), a poll loop
 /// up to 240s with a re-kill at 5s and a UAC-elevated escalation at 15s if
-/// the port is still occupied. Only ever targets `{REPO}-backend`/
-/// `{REPO}-native` processes or the specific PID squatting our port — never
-/// a blind `taskkill` sweep of unrelated processes (see
+/// the port is still occupied. Only ever targets `demo-vid-mcp-backend`/
+/// `demo-vid-mcp-native` processes or the specific PID squatting our port —
+/// never a blind `taskkill` sweep of unrelated processes (see
 /// TAURI_PRODUCTION_PITFALLS.md #608: this exact pattern once killed Docker
 /// Desktop's wslrelay because it happened to be on the target port).
 fn free_port(port: u16) -> bool {
     #[cfg(windows)]
     {
-        let img_kill = "Stop-Process -Name '{REPO}-backend' -Force -ErrorAction SilentlyContinue; \
-             Stop-Process -Name '{REPO}-native' -Force -ErrorAction SilentlyContinue; \
-             taskkill /F /IM {REPO}-backend.exe /T 2>$null; \
-             taskkill /F /IM {REPO}-native.exe /T 2>$null";
+        let img_kill = "Stop-Process -Name 'demo-vid-mcp-backend' -Force -ErrorAction SilentlyContinue; \
+             Stop-Process -Name 'demo-vid-mcp-native' -Force -ErrorAction SilentlyContinue; \
+             taskkill /F /IM demo-vid-mcp-backend.exe /T 2>$null; \
+             taskkill /F /IM demo-vid-mcp-native.exe /T 2>$null";
         let _ = Command::new("powershell.exe")
             .args(["-NoProfile", "-Command", img_kill])
             .stdout(Stdio::null()).stderr(Stdio::null())
@@ -152,8 +152,8 @@ fn free_port(port: u16) -> bool {
             if i == 15 {
                 let elevated = format!(
                     "Start-Process powershell -Verb RunAs -WindowStyle Hidden -ArgumentList \
-                     '-NoProfile -Command \"Stop-Process -Name {REPO}-backend -Force -ErrorAction SilentlyContinue; \
-                     taskkill /F /IM {REPO}-backend.exe /T 2>$null; \
+                     '-NoProfile -Command \"Stop-Process -Name demo-vid-mcp-backend -Force -ErrorAction SilentlyContinue; \
+                     taskkill /F /IM demo-vid-mcp-backend.exe /T 2>$null; \
                      Get-NetTCPConnection -LocalPort {port} -ErrorAction SilentlyContinue | \
                      ForEach-Object {{ taskkill /F /PID $_.OwningProcess /T 2>$null }}\"'"
                 );
