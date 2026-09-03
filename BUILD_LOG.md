@@ -76,6 +76,21 @@ noise:**
    Verified directly (bypassing Tauri) after the fix: `dist/demo-vid-mcp-backend.exe`
    with `PORT=11134` now serves `/api/health` and `/api/v1/diagnostics` correctly.
 
+**Final CUA-NSIS run against the fixed installer** — real, fresh install of `Demo Vid
+MCP_0.3.0_x64-setup.exe`: backend reported healthy on attempt 9 (~27s, within the
+free_port poll's normal range), `GET /api/health` returned 200, `GET
+/api/v1/diagnostics` returned the full real tool list/uptime/system payload, no errors
+in the app log. This is genuine functional proof the fixed backend works end-to-end
+through a real install — not a mock. **The window-detection retry fix (above) did not
+fully resolve the gap**: `cua_find_window()` still could not find a window matching
+`"Demo Vid MCP"` even with the 10s retry, so the visual nav-walk (Phase 9) and
+screenshot (Phase 5) still did not execute; the script reported "11/11 phases passed"
+on the strength of the REST-level checks (6, 7, 10) alone, non-fatal skips elsewhere.
+**Follow-up needed**: root-cause why pywinauto's `find_elements(title_re=...)` doesn't
+match this window — check the actual rendered window title/class via a live
+`pywinauto.findwindows.find_elements()` dump next time the app is installed, rather than
+assuming the configured title is correct just because it matches `tauri.conf.json`.
+
 **Known gaps not addressed in this pass** (deferred, tracked in
 `reports/assess-2026-09-03.md`): webapp font-size/contrast sweep (`text-xs`/
 `text-slate-400` etc., ~150+ occurrences across the SPA), full loading/error-state
