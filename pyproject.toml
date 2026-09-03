@@ -49,8 +49,9 @@ dev = [
     "pywinauto>=0.6.9",
     "pillow>=12.3.0",
     "pytesseract>=0.3.13",
+    "pytest-cov>=7.1.0",
 ]
 
 [tool.pytest.ini_options]
 asyncio_mode = "strict"
-addopts = "-q --ignore=tests/test_e2e.py"
+addopts = "-q --ignore=tests/test_e2e.py --cov=src/demo_vid_mcp --cov-report=term-missing --cov-fail-under=40"
