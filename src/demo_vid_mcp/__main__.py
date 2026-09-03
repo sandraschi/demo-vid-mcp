@@ -28,9 +28,9 @@ def main() -> None:
     if args.serve:
         import uvicorn
 
-        uvicorn.run(
-            "demo_vid_mcp.app:app", host=args.host, port=args.port, log_level=args.log_level
-        )
+        from .app import app
+
+        uvicorn.run(app, host=args.host, port=args.port, log_level=args.log_level)
     else:
         from .server import mcp
 

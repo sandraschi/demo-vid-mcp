@@ -60,3 +60,7 @@ test-capture/
 
 # Assessment reports (audit trail lives in .assess-fix-timestamp, not here)
 reports/
+
+# Test artifacts
+.coverage
+webapp/test-results/

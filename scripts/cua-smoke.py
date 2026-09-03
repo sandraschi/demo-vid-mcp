@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """CUA smoke test for NSIS-installed fleet apps (pywinauto-mcp canary).
 
-CUA_SMOKE_VERSION = 3
+CUA_SMOKE_VERSION = 4
 If this file differs from templates/tauri-native/scripts/cua-smoke.py in
 mcp-central-docs, copy the template over — version number will have changed.
 
@@ -60,7 +60,7 @@ def load_config(path: str | None = None) -> dict:
     return {k: _expand(v) for k, v in cfg.items()}
 
 
-CUA_SMOKE_VERSION = 3  # bump when template changes; see docstring
+CUA_SMOKE_VERSION = 4  # bump when template changes; see docstring
 
 
 def _check_version():
@@ -152,29 +152,40 @@ def _get_window(handle: int):
     return app.window(handle=handle)
 
 
-def cua_find_window(title_re: str = "") -> dict | None:
-    """Find a window by title regex. Returns {handle, title, rect} or None."""
-    try:
-        import pywinauto
+def cua_find_window(title_re: str = "", retry_seconds: int = 10) -> dict | None:
+    """Find a window by title regex. Returns {handle, title, rect} or None.
 
-        wins = pywinauto.findwindows.find_elements(title_re=title_re)
-        tauri = [w for w in wins if w.class_name != "QMainWindow"]
-        if not tauri:
+    Retries for up to `retry_seconds` (1s poll) - the backend can report
+    healthy before the WebView2 window has finished initializing and
+    rendering, so a single immediate lookup right after the health check
+    is a common false-negative source (window genuinely appears a couple
+    seconds later).
+    """
+    import pywinauto
+
+    deadline = time.monotonic() + retry_seconds
+    while True:
+        try:
+            wins = pywinauto.findwindows.find_elements(title_re=title_re)
+            tauri = [w for w in wins if w.class_name != "QMainWindow"]
+            if tauri:
+                handle = tauri[0].handle
+                app = pywinauto.Application(backend="uia").connect(handle=handle)
+                win = app.window(handle=handle)
+                win.wait("visible", timeout=5)
+                rect = win.rectangle()
+                w = rect.width if isinstance(rect.width, int) else rect.width()
+                h = rect.height if isinstance(rect.height, int) else rect.height()
+                return {
+                    "handle": handle,
+                    "title": win.window_text(),
+                    "rect": {"left": rect.left, "top": rect.top, "width": w, "height": h},
+                }
+        except Exception:
+            pass
+        if time.monotonic() >= deadline:
             return None
-        handle = tauri[0].handle
-        app = pywinauto.Application(backend="uia").connect(handle=handle)
-        win = app.window(handle=handle)
-        win.wait("visible", timeout=5)
-        rect = win.rectangle()
-        w = rect.width if isinstance(rect.width, int) else rect.width()
-        h = rect.height if isinstance(rect.height, int) else rect.height()
-        return {
-            "handle": handle,
-            "title": win.window_text(),
-            "rect": {"left": rect.left, "top": rect.top, "width": w, "height": h},
-        }
-    except Exception:
-        return None
+        time.sleep(1)
 
 
 def cua_screenshot(window_handle: int = 0, output_path: str = "") -> str | None:

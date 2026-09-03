@@ -3,11 +3,17 @@
 # Fleet standard: strip=False, upx=False, noarchive=True (see tauri_nsis_building.md).
 # Usage (from repo root):
 #   uv run pyinstaller demo-vid-mcp-backend.spec --distpath dist --clean --noconfirm
+#
+# Entry point is run_server.py (repo root), NOT src/demo_vid_mcp/__main__.py directly -
+# freezing __main__.py as the entry script has no package context, so its
+# `from .config import config` relative import fails at runtime with
+# "attempted relative import with no known parent package". run_server.py
+# imports demo_vid_mcp.__main__ as a real package instead.
 
 block_cipher = None
 
 a = Analysis(
-    ["src/demo_vid_mcp/__main__.py"],
+    ["run_server.py"],
     pathex=["src"],
     binaries=[],
     datas=[("src/demo_vid_mcp", "demo_vid_mcp")],
