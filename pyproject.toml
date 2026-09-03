@@ -31,8 +31,12 @@ line-length = 100
 target-version = "py312"
 
 [tool.ruff.lint]
-select = ["E", "W", "F", "I", "B", "UP"]
+select = ["E", "W", "F", "I", "B", "UP", "T20"]
 ignore = ["E501"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["T20"]
+"scripts/*" = ["T20"]
 
 [dependency-groups]
 dev = [
@@ -42,6 +46,9 @@ dev = [
     "pyright>=1.1.411",
     "pre-commit>=4.6.1",
     "pyinstaller>=6.22.2",
+    "pywinauto>=0.6.9",
+    "pillow>=12.3.0",
+    "pytesseract>=0.3.13",
 ]
 
 [tool.pytest.ini_options]

@@ -1,7 +1,7 @@
 {
   "$schema": "https://glama.ai/schemas/mcp.json",
   "name": "demo-vid-mcp",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Fleet demo video pipeline — record webapp walkthroughs (Playwright), add TTS voiceover (speech-mcp), compose MP4 (FFmpeg). Auto-starts target repos, detects blank pages, stores in categorized depot with rebuild.",
   "author": "Sandra Schieder",
   "license": "MIT",

@@ -1,7 +1,7 @@
 {
   "manifest_version": "0.2",
   "name": "demo-vid-mcp",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "description": "Fleet intro video pipeline — record, narrate, compose, and refine repo walkthrough videos.",
   "author": { "name": "Sandra Schipal" },
   "server": {
