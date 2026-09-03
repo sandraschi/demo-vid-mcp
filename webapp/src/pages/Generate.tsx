@@ -113,7 +113,7 @@ export default function Generate() {
   }, [selectedRepo, script, aspectRatio, resolution]);
 
   return (
-    <div data-testid="generate-page" className="p-6 max-w-3xl mx-auto">
+    <div className="p-6 max-w-3xl mx-auto">
       <h1 className="text-xl font-bold text-zinc-100 mb-6">Generate Video</h1>
       <div className="bg-zinc-900 rounded-lg p-4 border border-zinc-800 space-y-4">
         <div className="grid grid-cols-2 gap-4">

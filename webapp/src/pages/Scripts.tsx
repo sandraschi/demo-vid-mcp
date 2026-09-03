@@ -11,7 +11,7 @@ const SCRIPTS = [
 
 export default function Scripts() {
   return (
-    <div data-testid="scripts-page" className="p-6 max-w-3xl mx-auto">
+    <div className="p-6 max-w-3xl mx-auto">
       <div className="flex items-center gap-3 mb-6">
         <FileText className="h-7 w-7 text-amber-400" />
         <h1 className="text-xl font-bold text-zinc-100">Narration Scripts</h1>

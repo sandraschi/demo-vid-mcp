@@ -69,7 +69,7 @@ export default function SettingsPage() {
   }, []);
 
   return (
-    <div data-testid="settings-page" className="p-6 max-w-3xl mx-auto">
+    <div className="p-6 max-w-3xl mx-auto">
       <div className="flex items-center gap-3 mb-6">
         <SettingsIcon className="h-7 w-7 text-amber-400" />
         <h1 className="text-xl font-bold text-zinc-100">Settings</h1>

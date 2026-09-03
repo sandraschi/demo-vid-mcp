@@ -52,7 +52,7 @@ export default function Logs() {
   };
 
   return (
-    <div data-testid="logs-page" className="p-6 max-w-5xl mx-auto">
+    <div className="p-6 max-w-5xl mx-auto">
       <div className="flex items-center gap-3 mb-4">
         <Terminal className="h-7 w-7 text-amber-400" />
         <h1 className="text-xl font-bold text-zinc-100">Logs</h1>
