@@ -14,7 +14,7 @@ export default function Help() {
   const [tab, setTab] = useState("overview");
 
   return (
-    <div data-testid="help-page" className="p-6 max-w-4xl mx-auto">
+    <div className="p-6 max-w-4xl mx-auto">
       <div className="flex items-center gap-3 mb-6">
         <HelpCircle className="h-7 w-7 text-amber-400" />
         <h1 className="text-xl font-bold text-zinc-100">Help</h1>

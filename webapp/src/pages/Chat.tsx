@@ -175,7 +175,7 @@ export default function ChatPage() {
   }, []);
 
   return (
-    <div data-testid="chat-page" className="flex flex-col h-full">
+    <div className="flex flex-col h-full">
       {/* Controls Bar */}
       <div
         data-testid="chat-controls"

@@ -253,7 +253,7 @@ export default function Choreography() {
   }, [repo, generateYaml]);
 
   return (
-    <div data-testid="choreography-page" className="p-6 max-w-6xl mx-auto">
+    <div className="p-6 max-w-6xl mx-auto">
       <div className="flex items-center gap-3 mb-6">
         <Clapperboard className="h-7 w-7 text-amber-400" />
         <h1 className="text-xl font-bold text-zinc-100">Choreography</h1>

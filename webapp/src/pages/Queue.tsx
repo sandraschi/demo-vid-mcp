@@ -59,7 +59,7 @@ export default function Queue() {
   const completed = jobs.filter((j) => j.status === "completed").length;
 
   return (
-    <div data-testid="queue-page" className="p-6 max-w-5xl mx-auto">
+    <div className="p-6 max-w-5xl mx-auto">
       <div className="flex items-center gap-3 mb-6">
         <ListOrdered className="h-7 w-7 text-amber-400" />
         <div>

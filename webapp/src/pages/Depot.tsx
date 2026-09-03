@@ -222,7 +222,7 @@ export default function Depot() {
   );
 
   return (
-    <div data-testid="depot-page" className="p-6 max-w-6xl mx-auto">
+    <div className="p-6 max-w-6xl mx-auto">
       <div className="flex items-center gap-3 mb-4">
         <h1 className="text-xl font-bold text-zinc-100">Depot</h1>
         <span className="text-sm text-zinc-500">{entries.length} videos</span>
