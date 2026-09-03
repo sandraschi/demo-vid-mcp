@@ -1,5 +1,9 @@
 # Installing demo-vid-mcp
 
+> **First time?** Complete [docs/ONBOARDING.md](docs/ONBOARDING.md) before expecting live
+> recording/compose calls to succeed — it covers FFmpeg, Playwright Chromium, and the
+> optional speech-mcp/Ollama integrations.
+
 ## Prerequisites
 
 | Tool | Purpose | Install |
