@@ -18,14 +18,21 @@ for ($i = 0; $i -lt 60; $i++) {
 }
 
 # Start frontend
-$WebRoot = Join-Path $ScriptRoot "webapp"
-$BunPath = "C:\Users\sandr\.bun\bin\bun.exe"
-Start-Process -NoNewWindow -FilePath $BunPath -ArgumentList "run dev" -WorkingDirectory $WebRoot
+if (-not $BackendOnly) {
+    $WebRoot = Join-Path $ScriptRoot "webapp"
+    $BunCmd = Get-Command bun -ErrorAction SilentlyContinue
+    $BunPath = if ($BunCmd) { $BunCmd.Source } else { Join-Path $env:USERPROFILE ".bun\bin\bun.exe" }
+    if (Test-Path $BunPath) {
+        Start-Process -NoNewWindow -FilePath $BunPath -ArgumentList "run dev" -WorkingDirectory $WebRoot
+    } else {
+        Write-Warning "Bun not found at $BunPath; frontend not started"
+    }
 
-# Open browser
-if (-not $NoBrowser -and -not $Headless) { Start-Process "http://127.0.0.1:$FrontendPort" }
+    # Open browser
+    if (-not $NoBrowser -and -not $Headless) { Start-Process "http://127.0.0.1:$FrontendPort" }
+}
 
-Write-Host "demo-vid-mcp: backend $BackendPort, frontend $FrontendPort"
+Write-Host "demo-vid-mcp: backend $BackendPort$(if (-not $BackendOnly) { ", frontend $FrontendPort" })"
 
 while ($true) {
     if ($BackendJob.State -in @("Completed", "Failed")) { Receive-Job $BackendJob; break }

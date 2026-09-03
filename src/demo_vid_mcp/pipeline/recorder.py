@@ -15,11 +15,11 @@ async def record(script: dict, output_dir: str, theme: str = "dark") -> dict:
     """Run Playwright to capture a .webm from a narration script.
 
     Uses Playwright's native video recording. Checks process exit code
-    BEFORE looking for output files — prevents stale files from a
+    BEFORE looking for output files - prevents stale files from a
     previous run being reported as success. Kills subprocess on timeout
     to prevent hanging the pipeline.
 
-    theme: "dark" (fleet default) or "light" — passed to the capture
+    theme: "dark" (fleet default) or "light" - passed to the capture
     script, which forces the theme class on the target page so demo
     videos match the requested mode.
 
@@ -28,18 +28,18 @@ async def record(script: dict, output_dir: str, theme: str = "dark") -> dict:
     """
     steps = script.get("steps", [])
 
-    # Nothing to record — succeed without spawning the browser. This keeps
+    # Nothing to record - succeed without spawning the browser. This keeps
     # the empty-script path hermetic (no node, no playwright, no Chromium),
     # so the pipeline works even on machines without the browser installed.
     if not steps:
-        return {"success": True, "video_path": None, "message": "No steps — nothing to record"}
+        return {"success": True, "video_path": None, "message": "No steps - nothing to record"}
 
     script_dir = Path(__file__).resolve().parents[3] / "scripts"
     capture_js = script_dir / "playwright-capture.js"
     if not capture_js.exists():
         return {"success": False, "error": f"Capture script not found at {capture_js}"}
 
-    # Fresh output directory — delete stale files from prior runs
+    # Fresh output directory - delete stale files from prior runs
     for old in Path(output_dir).glob("*.webm"):
         old.unlink(missing_ok=True)
 
@@ -47,13 +47,24 @@ async def record(script: dict, output_dir: str, theme: str = "dark") -> dict:
     steps_file.write_text(json.dumps(steps), encoding="utf-8")
     output_base = str(Path(output_dir) / "recording")
 
-    logger.info("Starting Playwright capture (%d steps, theme=%s)...", len(steps), theme)
+    aspect = str(script.get("aspect_ratio", "16:9"))
+    resolution = str(script.get("resolution", "720p"))
+
+    logger.info(
+        "Starting Playwright capture (%d steps, theme=%s, aspect=%s, res=%s)...",
+        len(steps),
+        theme,
+        aspect,
+        resolution,
+    )
     proc = await asyncio.create_subprocess_exec(
         "node",
         str(capture_js),
         str(steps_file),
         output_base,
         theme,
+        aspect,
+        resolution,
         stdout=subprocess.DEVNULL,
         stderr=subprocess.PIPE,
     )

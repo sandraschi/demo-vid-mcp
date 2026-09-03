@@ -1,4 +1,4 @@
-"""FastAPI application — REST API for demo video webapp."""
+"""FastAPI application - REST API for demo video webapp."""
 
 import logging
 from collections import deque
@@ -15,7 +15,7 @@ from . import __version__
 from .config import config
 from .server import mcp
 
-# Ring-buffer log handler — stores last 500 log records in memory
+# Ring-buffer log handler - stores last 500 log records in memory
 _log_buffer: deque[dict] = deque(maxlen=500)
 
 
@@ -42,9 +42,12 @@ _mcp_http = mcp.http_app(path="/")
 async def lifespan(app: FastAPI):
     import logging
 
+    from demo_vid_mcp.pipeline.queue import job_queue
+
     logger = logging.getLogger("demo-vid-mcp")
     async with _mcp_http.router.lifespan_context(_mcp_http):
-        logger.info("demo-vid-mcp ready")
+        await job_queue.start_worker()
+        logger.info("demo-vid-mcp ready with background job queue active")
         yield
 
 
@@ -52,7 +55,24 @@ app = FastAPI(
     title="demo-vid-mcp", description="Demo video pipeline", version=__version__, lifespan=lifespan
 )
 
-app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+_ALLOWED_ORIGINS = [
+    "http://127.0.0.1:11135",
+    "http://localhost:11135",
+    "http://127.0.0.1:11134",
+    "http://localhost:11134",
+    "tauri://localhost",
+    "http://tauri.localhost",
+    "https://tauri.localhost",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=_ALLOWED_ORIGINS,
+    allow_origin_regex=r"^https?://(localhost|127\.0\.0\.1|100\.\d{1,3}\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3})(:\d+)?$",
+    allow_methods=["*"],
+    allow_headers=["*"],
+    allow_credentials=True,
+)
 app.mount("/mcp", _mcp_http)
 
 videos_dir = Path(config.data_dir) / "videos"
@@ -66,7 +86,7 @@ async def health():
     return {
         "status": "ok",
         "version": __version__,
-        "videos_served": sum(1 for _ in videos_dir.iterdir() if _.suffix == ".mp4"),
+        "videos_served": sum(1 for _ in videos_dir.rglob("*.mp4")),
     }
 
 
@@ -87,7 +107,11 @@ async def speech_health():
 async def api_generate(body: dict):
     from demo_vid_mcp.tools.generate import demo_vid_generate
 
-    result = await demo_vid_generate(repo=body.get("repo", ""), script_yaml=body.get("script_yaml"))
+    repo = body.get("repo", "").strip()
+    if not repo:
+        return {"success": False, "error": "repo required"}
+
+    result = await demo_vid_generate(repo=repo, script_yaml=body.get("script_yaml"))
     return result
 
 
@@ -250,6 +274,8 @@ async def list_depot():
         if not mp4:
             continue
         script_path = repo_dir / "narration.yaml"
+        poster_path = repo_dir / "poster.jpg"
+        vtt_path = repo_dir / "subtitles.vtt"
         for vid in mp4:
             s = vid.stat()
             entries.append(
@@ -257,6 +283,12 @@ async def list_depot():
                     "repo": repo_dir.name,
                     "name": vid.stem,
                     "video_path": f"/videos/{repo_dir.name}/{vid.name}",
+                    "poster_path": f"/videos/{repo_dir.name}/poster.jpg"
+                    if poster_path.exists()
+                    else None,
+                    "vtt_path": f"/videos/{repo_dir.name}/subtitles.vtt"
+                    if vtt_path.exists()
+                    else None,
                     "size_kb": s.st_size // 1024,
                     "created": str(int(s.st_mtime)),
                     "has_script": script_path.exists(),
@@ -265,7 +297,41 @@ async def list_depot():
                     else None,
                 }
             )
-    return {"repos": entries}
+    return {"repos": entries, "videos": entries}
+
+
+@app.get("/api/queue")
+async def queue_list():
+    """Return persistent generation queue status."""
+    from demo_vid_mcp.pipeline.queue import job_queue
+
+    return {"jobs": job_queue.list_jobs()}
+
+
+@app.post("/api/queue")
+async def queue_enqueue(body: dict):
+    """Enqueue a video generation job."""
+    from demo_vid_mcp.pipeline.queue import job_queue
+
+    repo = body.get("repo", "").strip()
+    if not repo:
+        return {"success": False, "error": "repo parameter is required"}
+    job = job_queue.enqueue(
+        repo=repo,
+        script_yaml=body.get("script_yaml"),
+        aspect_ratio=body.get("aspect_ratio", "16:9"),
+        resolution=body.get("resolution", "720p"),
+    )
+    return {"success": True, "job": job}
+
+
+@app.delete("/api/queue/{job_id}")
+async def queue_cancel(job_id: str):
+    """Cancel a pending generation job."""
+    from demo_vid_mcp.pipeline.queue import job_queue
+
+    canceled = job_queue.cancel_job(job_id)
+    return {"success": canceled}
 
 
 @app.get("/api/logs")
@@ -378,8 +444,9 @@ async def llm_chat(body: dict):
     }
     cfg = provider_configs.get(provider.lower(), provider_configs["ollama"])
 
+    timeout = httpx.Timeout(connect=2.0, read=60.0, write=10.0, pool=2.0)
     try:
-        async with httpx.AsyncClient(timeout=60) as client:
+        async with httpx.AsyncClient(timeout=timeout) as client:
             if provider.lower() == "ollama":
                 payload = {"model": model, "messages": messages, "stream": True}
                 r = await client.post(f"{cfg['base']}{cfg['path']}", json=payload)
@@ -407,11 +474,23 @@ async def llm_chat(body: dict):
                 data = r.json()
                 content = data.get("choices", [{}])[0].get("message", {}).get("content", "")
                 return {"success": True, "message": {"role": "assistant", "content": content}}
-    except httpx.ConnectError:
+    except (httpx.ConnectError, httpx.ConnectTimeout, httpx.NetworkError):
+        port = cfg["base"].split(":")[-1]
         return {
-            "success": False,
+            "success": True,
+            "offline": True,
+            "message": {
+                "role": "assistant",
+                "content": (
+                    f"*(Notice: {provider.capitalize()} is not running on port {port})*\n\n"
+                    "The **demo video pipeline is fully functional without Ollama** — Playwright capture, "
+                    "speech-mcp voiceover, and FFmpeg video composition do not require an LLM.\n\n"
+                    f"To enable interactive AI chat, start the service:\n"
+                    f"```bash\n{provider.lower()} serve\n```"
+                ),
+            },
             "error": f"Provider {provider} not reachable on {cfg['base']}",
-            "suggestions": [f"Start {provider}: ollama serve", "Check the provider port"],
+            "suggestions": [f"Start {provider}: {provider} serve", "Use Generate page directly"],
         }
     except Exception as e:
         return {"success": False, "error": str(e)}
@@ -419,8 +498,7 @@ async def llm_chat(body: dict):
 
 @app.get("/api/llm/discover")
 async def llm_discover():
-    """Probe common LLM providers and return detected ones with available models."""
-    providers = []
+    """Probe common LLM providers concurrently and return detected ones with available models."""
     probe_configs = [
         {
             "name": "Ollama",
@@ -429,6 +507,7 @@ async def llm_discover():
             "model_path": "/api/tags",
             "model_key": "models",
             "model_name_key": "name",
+            "start_hint": "ollama serve",
         },
         {
             "name": "LM Studio",
@@ -437,11 +516,14 @@ async def llm_discover():
             "model_path": "/v1/models",
             "model_key": "data",
             "model_name_key": "id",
+            "start_hint": "Start LM Studio local server on port 1234",
         },
     ]
-    for cfg in probe_configs:
+
+    async def probe_one(cfg: dict) -> dict:
         try:
-            async with httpx.AsyncClient(timeout=2) as client:
+            timeout = httpx.Timeout(connect=0.6, read=1.0, write=0.5, pool=0.5)
+            async with httpx.AsyncClient(timeout=timeout) as client:
                 r = await client.get(f"http://127.0.0.1:{cfg['port']}{cfg['path']}")
                 if r.status_code == 200:
                     data = r.json()
@@ -451,16 +533,45 @@ async def llm_discover():
                         if isinstance(models_data, list)
                         else []
                     )
-                    providers.append(
-                        {
-                            "name": cfg["name"],
-                            "port": cfg["port"],
-                            "detected": True,
-                            "models": models,
-                        }
-                    )
-                else:
-                    providers.append({"name": cfg["name"], "port": cfg["port"], "detected": False})
-        except (httpx.ConnectError, httpx.TimeoutException):
-            providers.append({"name": cfg["name"], "port": cfg["port"], "detected": False})
-    return {"providers": providers}
+                    return {
+                        "name": cfg["name"],
+                        "port": cfg["port"],
+                        "detected": True,
+                        "status": "online",
+                        "models": models,
+                    }
+                return {
+                    "name": cfg["name"],
+                    "port": cfg["port"],
+                    "detected": False,
+                    "status": f"HTTP {r.status_code}",
+                    "hint": cfg["start_hint"],
+                }
+        except Exception:
+            return {
+                "name": cfg["name"],
+                "port": cfg["port"],
+                "detected": False,
+                "status": "offline",
+                "hint": cfg["start_hint"],
+            }
+
+    import asyncio
+
+    providers = await asyncio.gather(*(probe_one(c) for c in probe_configs))
+    return {"providers": list(providers)}
+
+
+@app.post("/api/shutdown")
+async def api_shutdown():
+    """Graceful server shutdown."""
+    import asyncio
+    import os
+    import signal
+
+    async def _die():
+        await asyncio.sleep(0.5)
+        os.kill(os.getpid(), signal.SIGTERM)
+
+    asyncio.create_task(_die())
+    return {"success": True, "message": "Server shutting down..."}

@@ -18,9 +18,14 @@ export default function Scripts() {
       </div>
       <div className="bg-zinc-900 rounded-lg border border-zinc-800 overflow-hidden">
         {SCRIPTS.map((s) => (
-          <div key={s.repo} className="flex items-center justify-between px-4 py-3 border-b border-zinc-800 last:border-0">
+          <div
+            key={s.repo}
+            className="flex items-center justify-between px-4 py-3 border-b border-zinc-800 last:border-0"
+          >
             <span className="text-sm text-zinc-200">{s.repo}</span>
-            <span className={`text-xs px-2 py-0.5 rounded-full ${s.status === "done" ? "bg-green-900 text-green-300" : "bg-zinc-800 text-zinc-400"}`}>
+            <span
+              className={`text-xs px-2 py-0.5 rounded-full ${s.status === "done" ? "bg-green-900 text-green-300" : "bg-zinc-800 text-zinc-400"}`}
+            >
               {s.status === "done" ? "Has script" : "Pending"}
             </span>
           </div>

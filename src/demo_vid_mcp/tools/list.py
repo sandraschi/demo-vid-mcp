@@ -1,4 +1,4 @@
-"""Tool: demo_vid_list — list produced videos."""
+"""Tool: demo_vid_list - list produced videos."""
 
 from __future__ import annotations
 
@@ -29,7 +29,7 @@ async def demo_vid_list(
     """
     base = Path(config.data_dir) / "videos"
     if not base.exists():
-        return {"success": True, "videos": [], "count": 0}
+        return {"success": True, "videos": [], "count": 0, "message": "No videos produced yet"}
 
     if repo:
         search_dir = base / repo
@@ -51,4 +51,9 @@ async def demo_vid_list(
             }
         )
 
-    return {"success": True, "videos": videos, "count": len(videos)}
+    return {
+        "success": True,
+        "videos": videos,
+        "count": len(videos),
+        "message": f"Found {len(videos)} produced video(s)" if videos else "No videos found",
+    }

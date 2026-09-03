@@ -124,6 +124,9 @@ def default_script(repo: str) -> dict:
         "title": title,
         "duration_target": min(len(steps) * 15, 90),
         "voice": "heart",
+        "aspect_ratio": "16:9",
+        "resolution": "720p",
+        "bg_music": False,
         "steps": steps,
     }
 
@@ -140,6 +143,23 @@ def validate_script(raw: str) -> dict:
         or not isinstance(script["steps"], list)
     ):
         return {"success": False, "error": "Missing 'steps' list"}
+
+    # Validate aspect_ratio if specified
+    aspect = script.get("aspect_ratio")
+    if aspect and aspect not in ("16:9", "9:16"):
+        return {
+            "success": False,
+            "error": f"Invalid aspect_ratio '{aspect}'. Supported: '16:9', '9:16'",
+        }
+
+    # Validate resolution if specified
+    resolution = script.get("resolution")
+    if resolution and resolution not in ("720p", "1080p"):
+        return {
+            "success": False,
+            "error": f"Invalid resolution '{resolution}'. Supported: '720p', '1080p'",
+        }
+
     for i, step in enumerate(script["steps"]):
         if "action" not in step:
             return {"success": False, "error": f"Step {i}: missing 'action'"}

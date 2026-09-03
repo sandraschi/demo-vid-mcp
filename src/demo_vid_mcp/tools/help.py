@@ -1,4 +1,4 @@
-"""Tool: demo_vid_help — documentation."""
+"""Tool: demo_vid_help - documentation."""
 
 from demo_vid_mcp.server import mcp
 

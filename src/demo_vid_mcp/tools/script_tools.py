@@ -28,7 +28,7 @@ async def demo_vid_script_draft(
     return {
         "success": True,
         "script": script,
-        "message": "Default script — edit steps and re-run with demo_vid_generate",
+        "message": "Default script - edit steps and re-run with demo_vid_generate",
     }
 
 
@@ -50,4 +50,4 @@ async def demo_vid_script_validate(
     result = validate_script(script_yaml)
     if not result["success"]:
         return {"success": False, "error": result["error"]}
-    return {"success": True, "message": f"Script valid — {len(result['script']['steps'])} steps"}
+    return {"success": True, "message": f"Script valid - {len(result['script']['steps'])} steps"}

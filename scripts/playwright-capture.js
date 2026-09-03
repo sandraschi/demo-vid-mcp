@@ -13,20 +13,32 @@ const fs = require("fs");
 const path = require("path");
 
 async function main() {
-  const [stepsPath, outputBase, themeArg] = process.argv.slice(2);
+  const [stepsPath, outputBase, themeArg, aspectArg, resArg] = process.argv.slice(2);
   if (!stepsPath || !outputBase) {
-    console.error("Usage: node playwright-capture.js <steps.json> <output-base> [dark|light]");
+    console.error("Usage: node playwright-capture.js <steps.json> <output-base> [dark|light] [16:9|9:16] [720p|1080p]");
     process.exit(1);
   }
   const theme = themeArg === "light" ? "light" : "dark";
+  const isVertical = aspectArg === "9:16";
+  const is1080p = resArg === "1080p";
+
+  let width = 1280;
+  let height = 720;
+  if (isVertical) {
+    width = is1080p ? 1080 : 720;
+    height = is1080p ? 1920 : 1280;
+  } else if (is1080p) {
+    width = 1920;
+    height = 1080;
+  }
 
   const steps = JSON.parse(fs.readFileSync(stepsPath, "utf8"));
   const outputDir = path.dirname(outputBase);
   const browser = await chromium.launch({ headless: true });
   const context = await browser.newContext({
-    viewport: { width: 1280, height: 720 },
+    viewport: { width, height },
     deviceScaleFactor: 1,
-    recordVideo: { dir: outputDir, size: { width: 1280, height: 720 } },
+    recordVideo: { dir: outputDir, size: { width, height } },
   });
   const page = await context.newPage();
 
@@ -43,6 +55,41 @@ async function main() {
       }
     } catch { /* cross-origin / privacy mode */ }
   }, theme);
+
+  // Inject visual click ripples on user click interactions
+  await page.addInitScript(() => {
+    window.addEventListener(
+      "click",
+      (e) => {
+        const circle = document.createElement("div");
+        circle.style.position = "fixed";
+        circle.style.left = `${e.clientX - 16}px`;
+        circle.style.top = `${e.clientY - 16}px`;
+        circle.style.width = "32px";
+        circle.style.height = "32px";
+        circle.style.borderRadius = "50%";
+        circle.style.backgroundColor = "rgba(245, 158, 11, 0.4)";
+        circle.style.border = "2px solid rgba(245, 158, 11, 0.9)";
+        circle.style.pointerEvents = "none";
+        circle.style.zIndex = "999999";
+        circle.style.transform = "scale(0.5)";
+        circle.style.transition = "transform 0.4s ease-out, opacity 0.4s ease-out";
+        circle.style.opacity = "1";
+        document.documentElement.appendChild(circle);
+
+        requestAnimationFrame(() => {
+          circle.style.transform = "scale(1.8)";
+          circle.style.opacity = "0";
+        });
+
+        setTimeout(() => {
+          circle.remove();
+        }, 450);
+      },
+      true,
+    );
+  });
+
 
   for (const step of steps) {
     try {

@@ -10,6 +10,12 @@ interface LLMState {
 export const useLLMStore = create<LLMState>((set) => ({
   provider: localStorage.getItem("llm_provider") || "",
   model: localStorage.getItem("llm_model") || "",
-  setProvider: (p) => { localStorage.setItem("llm_provider", p); set({ provider: p }); },
-  setModel: (m) => { localStorage.setItem("llm_model", m); set({ model: m }); },
+  setProvider: (p) => {
+    localStorage.setItem("llm_provider", p);
+    set({ provider: p });
+  },
+  setModel: (m) => {
+    localStorage.setItem("llm_model", m);
+    set({ model: m });
+  },
 }));

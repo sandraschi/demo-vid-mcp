@@ -1,16 +1,30 @@
+import {
+  Clapperboard,
+  FileText,
+  HelpCircle,
+  LayoutDashboard,
+  ListOrdered,
+  MessageSquare,
+  Moon,
+  Settings,
+  SquareStack,
+  Sun,
+  Terminal,
+  Video,
+  Warehouse,
+} from "lucide-react";
 import { useEffect, useState } from "react";
-import { Video, SquareStack, FileText, ListOrdered, HelpCircle, LayoutDashboard, Warehouse, Terminal, Clapperboard, Settings, MessageSquare, Moon, Sun } from "lucide-react";
+import Chat from "./pages/Chat";
+import Choreography from "./pages/Choreography";
 import Dashboard from "./pages/Dashboard";
 import Depot from "./pages/Depot";
 import Detail from "./pages/Detail";
 import Generate from "./pages/Generate";
-import Choreography from "./pages/Choreography";
-import Chat from "./pages/Chat";
-import SettingsPage from "./pages/Settings";
-import Logs from "./pages/Logs";
-import Scripts from "./pages/Scripts";
-import Queue from "./pages/Queue";
 import Help from "./pages/Help";
+import Logs from "./pages/Logs";
+import Queue from "./pages/Queue";
+import Scripts from "./pages/Scripts";
+import SettingsPage from "./pages/Settings";
 
 const NAV = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -25,11 +39,51 @@ const NAV = [
   { id: "help", label: "Help", icon: HelpCircle },
 ] as const;
 
-type Page = typeof NAV[number]["id"];
+type Page = (typeof NAV)[number]["id"];
 
 export default function App() {
   const [page, setPage] = useState<Page>("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(true);
+
+  const [zoom, setZoom] = useState(() => {
+    try {
+      const saved = localStorage.getItem("tauri-zoom");
+      return saved ? Number.parseFloat(saved) : 1.0;
+    } catch {
+      return 1.0;
+    }
+  });
+
+  useEffect(() => {
+    const handleWheel = (e: WheelEvent) => {
+      if (e.ctrlKey) {
+        e.preventDefault();
+        const delta = e.deltaY < 0 ? 0.1 : -0.1;
+        setZoom((z) => {
+          const next = Math.min(Math.max(Math.round((z + delta) * 10) / 10, 0.5), 2.0);
+          try {
+            localStorage.setItem("tauri-zoom", next.toString());
+          } catch {}
+          return next;
+        });
+      }
+    };
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.key === "0") {
+        e.preventDefault();
+        setZoom(1.0);
+        try {
+          localStorage.setItem("tauri-zoom", "1.0");
+        } catch {}
+      }
+    };
+    window.addEventListener("wheel", handleWheel, { passive: false });
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("wheel", handleWheel);
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
 
   // EXPERIMENTAL light mode (invert hack). Not fleet standard - see index.css.
   // Toggling `.dark` off the root flips the invert filter; persisted so the
@@ -66,8 +120,11 @@ export default function App() {
   }[page];
 
   return (
-    <div className="flex h-screen">
-      <aside data-testid="sidebar" className={`${sidebarOpen ? "w-56" : "w-16"} bg-zinc-950 border-r border-zinc-800 flex flex-col transition-all duration-200`}>
+    <div className="flex h-screen" style={{ zoom }}>
+      <aside
+        data-testid="sidebar"
+        className={`${sidebarOpen ? "w-56" : "w-16"} bg-zinc-950 border-r border-zinc-800 flex flex-col transition-all duration-200`}
+      >
         <div className="p-4 flex items-center gap-3 border-b border-zinc-800">
           {sidebarOpen && <span className="font-bold text-zinc-100 text-lg">demo-vid</span>}
           <button
@@ -75,11 +132,19 @@ export default function App() {
             onClick={() => setLight((v) => !v)}
             className="ml-auto text-zinc-400 hover:text-white cursor-pointer"
             aria-label="Toggle light mode (experimental)"
-            title={light ? "Switch to dark (experimental light mode)" : "Switch to light (experimental, ugly)"}
+            title={
+              light
+                ? "Switch to dark (experimental light mode)"
+                : "Switch to light (experimental, ugly)"
+            }
           >
             {light ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
           </button>
-          <button onClick={() => setSidebarOpen(!sidebarOpen)} className="text-zinc-400 hover:text-white cursor-pointer" aria-label="Toggle sidebar">
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="text-zinc-400 hover:text-white cursor-pointer"
+            aria-label="Toggle sidebar"
+          >
             <SquareStack className="h-4 w-4" />
           </button>
         </div>
@@ -96,8 +161,9 @@ export default function App() {
             </button>
           ))}
         </nav>
-        <div className="p-3 border-t border-zinc-800 text-xs text-zinc-600">
-          {sidebarOpen && <span>v0.1.0</span>}
+        <div className="p-3 border-t border-zinc-800 text-xs text-zinc-500 flex justify-between">
+          {sidebarOpen && <span>v0.2.0</span>}
+          {sidebarOpen && <span>{Math.round(zoom * 100)}%</span>}
         </div>
       </aside>
 

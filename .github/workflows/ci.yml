@@ -18,6 +18,8 @@ jobs:
       - run: uv sync --group dev
       - run: uv run ruff check src
       - run: uv run ruff format --check src
+      - run: uv run pyright src
+
       - name: Install Playwright Chromium
         run: |
           npx playwright install chromium

@@ -1,6 +1,7 @@
 [project]
 name = "demo-vid-mcp"
-version = "0.1.0"
+version = "0.3.0"
+
 description = "Fleet intro video pipeline — record, narrate, compose, refine."
 requires-python = ">=3.13"
 dependencies = [
@@ -41,3 +42,7 @@ dev = [
     "pyright>=1.1.411",
     "pre-commit>=4.6.1",
 ]
+
+[tool.pytest.ini_options]
+asyncio_mode = "strict"
+addopts = "-q --ignore=tests/test_e2e.py"

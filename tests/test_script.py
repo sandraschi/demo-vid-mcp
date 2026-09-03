@@ -1,4 +1,5 @@
 """Tests for script parsing and validation."""
+
 from demo_vid_mcp.pipeline.script import default_script, validate_script
 
 

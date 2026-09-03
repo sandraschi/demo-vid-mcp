@@ -1,13 +1,16 @@
 {
   "name": "demo-vid-mcp-webapp",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "check": "tsc -b",
+    "typecheck": "tsc -b",
     "preview": "vite preview",
-    "lint": "biome check src/"
+    "lint": "biome check src/",
+    "biome:ci": "biome check src/"
   },
   "dependencies": {
     "lucide-react": "^0.500.0",
@@ -16,6 +19,7 @@
     "zustand": "^5.0.0"
   },
   "devDependencies": {
+    "@biomejs/biome": "1.9.4",
     "@tailwindcss/vite": "^4.0.0",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",

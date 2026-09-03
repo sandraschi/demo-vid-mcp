@@ -1,4 +1,4 @@
-"""Voiceover stage — calls speech-mcp TTS."""
+"""Voiceover stage - calls speech-mcp TTS."""
 
 from __future__ import annotations
 
@@ -27,7 +27,7 @@ async def generate_voiceover(script: dict, output_dir: str, speech_mcp_url: str 
     steps = script.get("steps", [])
     say_segments = [s["say"] for s in steps if s.get("say")]
     if not say_segments:
-        return {"success": True, "audio_path": None, "message": "No speech segments — silent video"}
+        return {"success": True, "audio_path": None, "message": "No speech segments - silent video"}
 
     audio_paths = []
     async with httpx.AsyncClient(timeout=30) as client:

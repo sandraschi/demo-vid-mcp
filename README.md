@@ -20,33 +20,38 @@ uvx mcpb install sandraschi/demo-vid-mcp
 ## What You Can Do
 
 - **Generate a video**: `demo_vid_generate(repo="chitchat")` — auto-starts the target webapp, records it, adds voiceover, composes MP4
+- **Or drive a native app live**: `demo_vid_generate(repo="blender-mcp", script_yaml=<desktop-capture script>)` — OBS records a real app window (Blender, Resonite) while `mcp_call` steps actually invoke that app's own MCP server during the recording, not a staged screencast. See `data/scripts/*.yaml` for working examples and [DEMO_VID_MCP_PLAN.md](DEMO_VID_MCP_PLAN.md) for the architecture.
 - **Draft a script**: `demo_vid_script_draft(repo="chitchat")` — reads the README and generates a narration script
-- **Browse the depot**: Categorized gallery of produced videos with inline player, rebuild, delete, and insert into repo README
+- **Browse the depot**: Categorized gallery of produced videos with inline player, subtitle tracks (.vtt), poster previews, rebuild, delete, and insert into repo README
+- **Persistent queue**: Background queue manager to schedule and track batch video generation across the fleet
 - **Chat about it**: Built-in chat with personalities, example prompts, and local LLM integration (Ollama/LM Studio)
 
 ## Tools
 
 | Tool | Description |
 |------|-------------|
-| `demo_vid_generate(repo, theme="dark")` | Full pipeline: auto-start target webapp → record (Playwright) → voiceover (speech-mcp) → compose (FFmpeg) → MP4. `theme="light"` forces the target webapp's light mode for bright demos (default `"dark"` matches fleet identity). |
+| `demo_vid_generate(repo, script_yaml?, base_url?, theme="dark", aspect_ratio="16:9", resolution="720p")` | Full pipeline: voiceover (speech-mcp) → record (Playwright with click ripples) → compose (FFmpeg) → MP4 + WebVTT/SRT subtitles + poster image. Supports landscape (`16:9`) or vertical mobile (`9:16`). Also auto-detects native desktop-capture mode via obs-mcp. |
 | `demo_vid_script_draft(repo)` | Generate a narration YAML from the target repo's README and webapp page structure |
-| `demo_vid_script_validate(yaml)` | Validate a narration script's structure and timing |
-| `demo_vid_list(repo?)` | List produced videos with metadata |
-| `demo_vid_refine(name, feedback)` | NOT YET IMPLEMENTED — edit narration.yaml directly and re-run generate |
-| `demo_vid_help` | List all tools and usage |
+| `demo_vid_script_validate(yaml)` | Validate a narration script's structure, timing, aspect ratio, and resolution |
+| `demo_vid_list(repo?)` | List produced videos with metadata, poster, and subtitle sidecar paths |
+| `demo_vid_refine(name, feedback)` | Automatically parse user feedback and mutate YAML narration timing, voice, and steps |
+| `demo_vid_help` | List all tools and usage information |
+| `demo_vid_shutdown` | Gracefully terminate the server and background queue worker |
 
 ## Webapp
 
 | Page | Purpose |
 |------|---------|
-| **Dashboard** | Backend status, KPI cards, pipeline overview |
-| **Depot** | Categorized gallery with inline player, rebuild, delete, insert buttons |
-| **Generate** | Select target repo by category → generate |
+| **Dashboard** | Backend status, KPI cards, dead port detection with one-click reconnect |
+| **Depot** | Categorized gallery with HTML5 player, subtitle toggle, poster previews, rebuild, delete |
+| **Queue** | Persistent background job queue manager with live polling, status badges, and cancel controls |
+| **Generate** | Select target repo by category, pick aspect ratio/resolution, draft YAML, and generate or queue |
 | **Choreography** | Visual script builder — 11 step types, global options, YAML preview |
 | **Chat** | SOTA chat with personalities, localStorage, example prompts, LLM integration |
 | **Settings** | LLM provider probe (Ollama/LM Studio), model selection, persistence |
 | **Logs** | Ring-buffer log viewer with level filter and search |
 | **Help** | 6-tab reference: overview, architecture, tools, config, fleet, troubleshooting |
+
 
 ## Autostart
 
@@ -59,7 +64,11 @@ Recording is dark-mode by default (fleet identity). Pass `theme="light"` to reco
 ## Fleet Services
 
 Required: speech-mcp (voiceover), Playwright (recording), FFmpeg (composition).
-Optional: blender-mcp (3D titles), OBS-mcp (human-in-video), stems-mcp (music), vfx-mcp (effects).
+Optional: blender-mcp (3D titles), stems-mcp (music), vfx-mcp (effects).
+
+**Desktop-capture mode** (native apps driven live — see [DEMO_VID_MCP_PLAN.md](DEMO_VID_MCP_PLAN.md)):
+windows-computer-use-mcp (window focus), obs-mcp (recording — window-capture *and* human-in-video),
+plus whichever MCP server the demo actually drives (blender-mcp, resonite-mcp, ...).
 
 ## Ports
 
@@ -70,6 +79,7 @@ See [WEBAPP_PORTS.md](https://github.com/sandraschi/mcp-central-docs/blob/main/o
 
 | Doc | Contents |
 |-----|----------|
+| [Roadmap & Architecture](DEMO_VID_MCP_PLAN.md) | Desktop-capture mode design, the `mcp_call` step type, the real remaining constraint (no Resonite camera control), v0.3 plans |
 | [Installation](INSTALL.md) | All install methods, prerequisites |
 | [Configuration](docs/CONFIGURATION.md) | Env vars, config options |
 | [Tool Reference](docs/TOOLS.md) | All available tools |

@@ -1,4 +1,4 @@
-"""Tool: demo_vid_generate — full pipeline orchestration."""
+"""Tool: demo_vid_generate - full pipeline orchestration."""
 
 from __future__ import annotations
 
@@ -15,6 +15,7 @@ from pydantic import Field
 
 from demo_vid_mcp.config import config
 from demo_vid_mcp.pipeline.composer import compose
+from demo_vid_mcp.pipeline.desktop_capture import record_desktop
 from demo_vid_mcp.pipeline.recorder import record
 from demo_vid_mcp.pipeline.script import default_script, validate_script
 from demo_vid_mcp.pipeline.voiceover import generate_voiceover
@@ -160,6 +161,15 @@ def _resolve_urls(script: dict, base_url: str) -> dict:
     return script
 
 
+def _is_desktop_capture(script: dict) -> bool:
+    """True if this script drives a native app window (Blender/Resonite/...)
+    instead of recording a fleet webapp. Set explicitly via the top-level
+    `desktop_capture` flag, or inferred from an `mcp_call` step being present."""
+    if script.get("desktop_capture"):
+        return True
+    return any(step.get("action") == "mcp_call" for step in script.get("steps", []))
+
+
 @mcp.tool()
 async def demo_vid_generate(
     repo: Annotated[str, Field(description="Repository name (e.g. 'chitchat').")],
@@ -175,23 +185,48 @@ async def demo_vid_generate(
     theme: Annotated[
         str, Field(description="Video theme: 'dark' (fleet default) or 'light' (bright demo).")
     ] = "dark",
+    aspect_ratio: Annotated[
+        str, Field(description="Aspect ratio: '16:9' (desktop) or '9:16' (mobile vertical).")
+    ] = "16:9",
+    resolution: Annotated[str, Field(description="Resolution preset: '720p' or '1080p'.")] = "720p",
     ctx: Context | None = None,
 ) -> dict:
     """Generate a demo video for a fleet repo.
 
-    Runs the full pipeline: validate script → voiceover (speech-mcp) → record (Playwright) → compose (FFmpeg).
+    Runs the full pipeline: validate script → voiceover (speech-mcp) → record → compose (FFmpeg).
     Stages run in parallel where possible. Output saved to data/videos/.
     theme="light" records the target webapp with its light-mode toggle forced
     on (bright demo); default "dark" matches fleet identity.
+    aspect_ratio="9:16" generates mobile vertical video; default "16:9" is landscape desktop.
+
+    Two recording modes, auto-detected from the script:
+    - Webapp mode (default): Playwright records the repo's own webapp on its
+      registered port. base_url/theme apply here.
+    - Desktop-capture mode: triggered by a top-level `desktop_capture: true`
+      flag or any step with `action: mcp_call` in script_yaml. OBS records a
+      window-capture scene (`obs_scene`, auto-created if missing) of a native
+      app (`capture_window`, e.g. "Blender" or "Resonite") while `mcp_call`
+      steps actually drive that app's own MCP server live via the real MCP
+      protocol - real tool calls, not a staged screen recording. Requires
+      windows-computer-use-mcp + obs-mcp running, and each *_MCP_URL env var
+      set to the target server's full /mcp endpoint (see DEMO_VID_MCP_PLAN.md).
 
     ## Return Format
-    {"success": bool, "message": str, "video_path": str | None, "stages": {...}}
+    {"success": bool, "message": str, "video_path": str | None, "poster_path": str | None, "vtt_path": str | None, "stages": {...}}
 
     ## Examples
     await demo_vid_generate(repo="chitchat")
-    await demo_vid_generate(repo="chitchat", theme="light")
+    await demo_vid_generate(repo="chitchat", theme="light", aspect_ratio="9:16")
     await demo_vid_generate(repo="chitchat", base_url="http://127.0.0.1:10975")
+    await demo_vid_generate(repo="blender-mcp", script_yaml=open("data/scripts/blender-chair-demo.yaml").read())
     """
+    if not repo or not repo.strip():
+        return {
+            "success": False,
+            "error": "repo parameter is required",
+            "suggestions": ["Provide a valid fleet repository name, e.g. 'chitchat'"],
+        }
+
     if script_yaml:
         validated = validate_script(script_yaml)
         if not validated["success"]:
@@ -200,8 +235,16 @@ async def demo_vid_generate(
     else:
         script = default_script(repo)
 
-    base = _resolve_base_url(repo, base_url)
-    script = _resolve_urls(script, base)
+    if aspect_ratio:
+        script["aspect_ratio"] = aspect_ratio
+    if resolution:
+        script["resolution"] = resolution
+
+    desktop_mode = _is_desktop_capture(script)
+
+    if not desktop_mode:
+        base = _resolve_base_url(repo, base_url)
+        script = _resolve_urls(script, base)
 
     video_dir = Path(config.data_dir) / "videos" / repo
     video_dir.mkdir(parents=True, exist_ok=True)
@@ -212,26 +255,39 @@ async def demo_vid_generate(
     script_path = video_dir / "narration.yaml"
     script_path.write_text(yaml.dump(script, default_flow_style=False), encoding="utf-8")
 
-    # Pre-check: is the target webapp reachable? Try to start it if not.
-    first_url = script.get("steps", [{}])[0].get("url", "")
-    if first_url:
-        if not await _ensure_target_running(repo, first_url):
-            return {
-                "success": False,
-                "error": f"Target webapp not reachable at {first_url}",
-                "suggestions": [
-                    f"Start the target webapp (frontend) on {first_url}",
-                    "The auto-start was attempted but failed — the backend may need a manual start",
-                ],
-            }
+    if not desktop_mode:
+        # Pre-check: is the target webapp reachable? Try to start it if not.
+        first_url = script.get("steps", [{}])[0].get("url", "")
+        if first_url:
+            if not await _ensure_target_running(repo, first_url):
+                return {
+                    "success": False,
+                    "error": f"Target webapp not reachable at {first_url}",
+                    "suggestions": [
+                        f"Start the target webapp (frontend) on {first_url}",
+                        "The auto-start was attempted but failed - the backend may need a manual start",
+                    ],
+                }
 
     stages = {}
 
-    # Voiceover and recording run in parallel
+    # Voiceover and recording run in parallel. In desktop_mode, the "recording"
+    # is OBS capturing a native app window while mcp_call steps drive it live
+    # (see pipeline/desktop_capture.py) instead of Playwright recording a webapp.
     voice_task = asyncio.create_task(
         generate_voiceover(script, str(video_dir), config.speech_mcp_url)
     )
-    record_task = asyncio.create_task(record(script, str(video_dir), theme=theme))
+    if desktop_mode:
+        record_task = asyncio.create_task(
+            record_desktop(
+                script,
+                str(video_dir),
+                script.get("capture_window", ""),
+                script.get("obs_scene", ""),
+            )
+        )
+    else:
+        record_task = asyncio.create_task(record(script, str(video_dir), theme=theme))
 
     voice_result = await voice_task
     stages["voiceover"] = voice_result
@@ -244,7 +300,8 @@ async def demo_vid_generate(
             "success": False,
             "error": record_result["error"],
             "stages": stages,
-            "suggestions": [
+            "suggestions": record_result.get("suggestions")
+            or [
                 "Check Playwright is installed: npx playwright install chromium",
                 "Check the script selectors resolve in the live app",
                 "Is the target webapp running on the expected port?",
@@ -264,6 +321,9 @@ async def demo_vid_generate(
             "success": True,
             "message": f"Video generated for {repo}",
             "video_path": compose_result.get("mp4_path"),
+            "poster_path": compose_result.get("poster_path"),
+            "vtt_path": compose_result.get("vtt_path"),
+            "srt_path": compose_result.get("srt_path"),
             "stages": stages,
         }
     return {"success": False, "error": compose_result["error"], "stages": stages}

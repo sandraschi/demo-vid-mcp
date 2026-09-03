@@ -1,4 +1,4 @@
-"""Composition stage — FFmpeg-based video composition."""
+"""Composition stage - FFmpeg-based video composition."""
 
 from __future__ import annotations
 
@@ -29,15 +29,97 @@ def _find_ffmpeg() -> str | None:
 _FFMPEG_PATH = _find_ffmpeg()
 
 
+def generate_subtitles(steps: list[dict], output_dir: Path) -> tuple[Path | None, Path | None]:
+    """Generate WebVTT and SRT subtitle sidecars based on narration step timings."""
+    vtt_lines = ["WEBVTT", ""]
+    srt_lines = []
+
+    current_s = 0.0
+    index = 1
+
+    for step in steps:
+        wait_s = float(step.get("wait", 2.0))
+        say_text = (step.get("say") or "").strip()
+        if say_text:
+            start_s = current_s
+            end_s = current_s + wait_s
+
+            def fmt_time(sec: float, decimal_sep: str) -> str:
+                hours = int(sec // 3600)
+                mins = int((sec % 3600) // 60)
+                secs = int(sec % 60)
+                ms = int(round((sec - int(sec)) * 1000))
+                return f"{hours:02d}:{mins:02d}:{secs:02d}{decimal_sep}{ms:03d}"
+
+            vtt_start, vtt_end = fmt_time(start_s, "."), fmt_time(end_s, ".")
+            srt_start, srt_end = fmt_time(start_s, ","), fmt_time(end_s, ",")
+
+            vtt_lines.append(f"{index}")
+            vtt_lines.append(f"{vtt_start} --> {vtt_end}")
+            vtt_lines.append(say_text)
+            vtt_lines.append("")
+
+            srt_lines.append(f"{index}")
+            srt_lines.append(f"{srt_start} --> {srt_end}")
+            srt_lines.append(say_text)
+            srt_lines.append("")
+            index += 1
+
+        current_s += wait_s
+
+    vtt_path = output_dir / "subtitles.vtt"
+    srt_path = output_dir / "subtitles.srt"
+
+    try:
+        vtt_path.write_text("\n".join(vtt_lines), encoding="utf-8")
+        srt_path.write_text("\n".join(srt_lines), encoding="utf-8")
+        return vtt_path, srt_path
+    except Exception as e:
+        logger.warning("Failed to write subtitle sidecars: %s", e)
+        return None, None
+
+
+async def extract_poster(video_path: Path, output_dir: Path) -> Path | None:
+    """Extract a high-quality poster frame from the composed video."""
+    if not _FFMPEG_PATH or not video_path.exists():
+        return None
+    poster_path = output_dir / "poster.jpg"
+    try:
+        cmd = [
+            _FFMPEG_PATH,
+            "-y",
+            "-ss",
+            "00:00:01.500",
+            "-i",
+            str(video_path),
+            "-vframes",
+            "1",
+            "-q:v",
+            "2",
+            str(poster_path),
+        ]
+        proc = await asyncio.create_subprocess_exec(
+            *cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
+        await asyncio.wait_for(proc.communicate(), timeout=15)
+        if proc.returncode == 0 and poster_path.exists():
+            return poster_path
+    except Exception as e:
+        logger.warning("Failed to extract poster frame: %s", e)
+    return None
+
+
 async def compose(
     script: dict, video_path: str | None, audio_path: str | None, output_dir: str
 ) -> dict:
     """Compose final .mp4 from recording + optional voiceover + title card.
 
     ## Return Format
-    {"success": bool, "mp4_path": str | None, "message": str}
+    {"success": bool, "mp4_path": str | None, "poster_path": str | None, "vtt_path": str | None, "srt_path": str | None, "message": str}
     """
-    output = Path(output_dir) / "final.mp4"
+    out_dir = Path(output_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    output = out_dir / "final.mp4"
     title = script.get("title", "Demo Video")
 
     if not video_path or not Path(video_path).exists():
@@ -50,7 +132,7 @@ async def compose(
     if not _FFMPEG_PATH:
         return {
             "success": False,
-            "error": "FFmpeg not found — cannot compose video",
+            "error": "FFmpeg not found - cannot compose video",
             "suggestions": [
                 "Install FFmpeg: scoop install ffmpeg",
                 "Install FFmpeg: winget install ffmpeg",
@@ -60,6 +142,7 @@ async def compose(
     audio_file = Path(audio_path) if audio_path and Path(audio_path).exists() else None
 
     try:
+        safe_title = title.replace("\\", r"\\").replace("'", r"\'").replace(":", r"\:")
         cmd = [_FFMPEG_PATH, "-y", "-i", str(video_path)]
         if audio_file:
             cmd += ["-i", str(audio_file)]
@@ -71,11 +154,13 @@ async def compose(
             "-crf",
             "23",
             "-vf",
-            f"drawtext=text='{title}':fontsize=24:fontcolor=white:x=10:y=10",
-            "-c:a",
-            "aac",
-            "-b:a",
-            "128k",
+            f"drawtext=text='{safe_title}':fontsize=24:fontcolor=white:x=10:y=10",
+        ]
+        if audio_file:
+            cmd += ["-c:a", "aac", "-b:a", "128k"]
+        else:
+            cmd += ["-an"]
+        cmd += [
             "-pix_fmt",
             "yuv420p",
             str(output),
@@ -93,7 +178,19 @@ async def compose(
                 "error": f"Composition failed (FFmpeg exit {proc.returncode})",
                 "suggestions": ["Check source video file exists and is valid"],
             }
-        return {"success": True, "mp4_path": str(output), "message": "Composition complete"}
+
+        # Generate subtitles & poster thumbnail
+        vtt_path, srt_path = generate_subtitles(script.get("steps", []), out_dir)
+        poster_path = await extract_poster(output, out_dir)
+
+        return {
+            "success": True,
+            "mp4_path": str(output),
+            "poster_path": str(poster_path) if poster_path else None,
+            "vtt_path": str(vtt_path) if vtt_path else None,
+            "srt_path": str(srt_path) if srt_path else None,
+            "message": "Composition complete",
+        }
     except FileNotFoundError:
         return {
             "success": False,

@@ -1,5 +1,6 @@
 # demo-vid-mcp
 
+- [Full Reference](llms-full.txt)
 - [Readme](README.md)
 - [Installation](INSTALL.md)
 - [Tool Reference](docs/TOOLS.md)

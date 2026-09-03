@@ -1,9 +1,25 @@
 """End-to-end API tests using httpx against a running backend."""
 
+import socket
+
 import httpx
 import pytest
 
 BACKEND = "http://127.0.0.1:11134"
+
+
+def _backend_is_live() -> bool:
+    try:
+        with socket.create_connection(("127.0.0.1", 11134), timeout=0.5):
+            return True
+    except OSError:
+        return False
+
+
+pytestmark = pytest.mark.skipif(
+    not _backend_is_live(),
+    reason="demo-vid-mcp backend not running on port 11134 (start with 'just serve' or 'start.ps1' to run E2E)",
+)
 
 
 @pytest.mark.anyio
