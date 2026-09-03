@@ -57,3 +57,6 @@ target/
 # Temporary test output
 test-output/
 test-capture/
+
+# Assessment reports (audit trail lives in .assess-fix-timestamp, not here)
+reports/

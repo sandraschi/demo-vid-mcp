@@ -20,6 +20,10 @@ build/
 *.mcpb
 
 # Non-MCP components (webapp, native, scripts)
-native/
-web_sota/
+src-tauri/
+webapp/
 scripts/
+
+# Batch-edit backups (never ship a .bak)
+*.bak
+*.bak.*

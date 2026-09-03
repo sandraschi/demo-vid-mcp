@@ -32,3 +32,19 @@ jobs:
           uv run pytest -q --tb=short tests/test_e2e.py
           Stop-Job $job -ErrorAction SilentlyContinue
           Remove-Job $job -ErrorAction SilentlyContinue
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - name: Install webapp dependencies
+        working-directory: webapp
+        run: bun install --frozen-lockfile
+      - name: Webapp typecheck
+        working-directory: webapp
+        run: bun run check
+      - name: Webapp Biome check
+        working-directory: webapp
+        run: bun run biome:ci
+      - name: Webapp build
+        working-directory: webapp
+        run: bun run build
