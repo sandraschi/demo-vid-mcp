@@ -1,6 +1,8 @@
 """FastAPI application - REST API for demo video webapp."""
 
 import logging
+import platform
+import time
 from collections import deque
 from contextlib import asynccontextmanager
 from datetime import UTC, datetime
@@ -36,6 +38,17 @@ _log_handler.setLevel(logging.INFO)
 logging.getLogger("demo-vid-mcp").addHandler(_log_handler)
 
 _mcp_http = mcp.http_app(path="/")
+_START_TIME = time.monotonic()
+
+_TOOL_NAMES = [
+    "demo_vid_generate",
+    "demo_vid_script_draft",
+    "demo_vid_script_validate",
+    "demo_vid_list",
+    "demo_vid_refine",
+    "demo_vid_help",
+    "demo_vid_shutdown",
+]
 
 
 @asynccontextmanager
@@ -87,6 +100,29 @@ async def health():
         "status": "ok",
         "version": __version__,
         "videos_served": sum(1 for _ in videos_dir.rglob("*.mp4")),
+    }
+
+
+@app.get("/api/v1/diagnostics")
+async def diagnostics():
+    """Full diagnostics for CUA-NSIS smoke testing: tool list, system info, errors."""
+    errors = [
+        entry["message"]
+        for entry in list(_log_buffer)[-50:]
+        if entry["level"] in ("ERROR", "CRITICAL")
+    ]
+    return {
+        "status": "ok",
+        "server": "demo-vid-mcp",
+        "version": __version__,
+        "uptime_seconds": int(time.monotonic() - _START_TIME),
+        "tool_count": len(_TOOL_NAMES),
+        "tools": [{"name": name} for name in _TOOL_NAMES],
+        "system": {
+            "windows": platform.system() == "Windows",
+            "platform": platform.platform(),
+        },
+        "errors": errors,
     }
 
 

@@ -1,0 +1,30 @@
+{
+  "product_name": "Demo Vid MCP",
+  "install_dir": "%LOCALAPPDATA%\\Demo Vid MCP",
+  "operator_exe": "demo-vid-mcp-native.exe",
+  "backend_process_names": ["demo-vid-mcp-native", "demo-vid-mcp-backend"],
+  "backend_port": 11134,
+  "health_path": "/api/health",
+  "diagnostics_path": "/api/v1/diagnostics",
+  "feature_smoke_path": "/api/health",
+  "window_title_re": "Demo Vid MCP",
+  "nsis_glob": "src-tauri/target/release/bundle/nsis/Demo Vid MCP_*_x64-setup.exe",
+  "bridge_ok_text": "demo-vid-mcp",
+  "uninstall_registry_filter": "*Demo*Vid*MCP*",
+  "nav_routes": [
+    ["Dashboard", "demo-vid-mcp"],
+    ["Depot", "Depot"],
+    ["Generate", "Generate Video"],
+    ["Choreography", "Choreography"],
+    ["Chat", "Chat"],
+    ["Scripts", "Narration Scripts"],
+    ["Settings", "Settings"],
+    ["Logs", "Logs"],
+    ["Queue", "Generation Queue"],
+    ["Help", "Help"]
+  ],
+  "sidebar_click_x": 30,
+  "sidebar_first_y": 90,
+  "sidebar_step_y": 45,
+  "log_file_paths": ["%LOCALAPPDATA%\\demo-vid-mcp\\logs\\backend-spawn.log"]
+}

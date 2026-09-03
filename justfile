@@ -41,3 +41,11 @@ cifull: ci
 # MCPB pack
 mcpb-pack:
     powershell.exe -NoProfile -ExecutionPolicy Bypass -File "D:\Dev\repos\mcp-central-docs\scripts\make-mcpb.ps1" -RepoPath (Get-Location).Path
+
+# Build the Tauri NSIS desktop installer (PyInstaller backend -> Rust -> NSIS)
+build-native:
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -File src-tauri\build.ps1
+
+# Run the CUA smoke test against the installed NSIS app (install -> launch -> nav walk -> uninstall)
+cua-nsis-test:
+    uv run python scripts/cua-smoke.py
