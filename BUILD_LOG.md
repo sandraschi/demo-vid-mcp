@@ -91,6 +91,47 @@ match this window — check the actual rendered window title/class via a live
 `pywinauto.findwindows.find_elements()` dump next time the app is installed, rather than
 assuming the configured title is correct just because it matches `tauri.conf.json`.
 
+## 2026-09-04 (continued) — two more real bugs, found by direct instrumentation
+
+The "follow-up needed" above turned out not to be a pywinauto quirk — the window really
+wasn't in a findable state, because the app was crashing/hanging on every real launch.
+Root-caused by directly instrumenting the installed app (`Get-Process` lifetime +
+`Responding` state, `pywinauto.findwindows.find_elements()` window class dump) instead
+of re-running the CUA script blind:
+
+1. **The app self-killed ~1.5s after every launch.** `free_port()`'s image-name kill ran
+   `Stop-Process -Name 'demo-vid-mcp-native'` to clear stale zombies — but `free_port()`
+   executes *from inside* the currently-running `demo-vid-mcp-native.exe` process itself
+   (`spawn_backend` is called from `setup()`, i.e. on the process's own startup), so this
+   command matched and killed the caller. Windows process-name matching has no "not me"
+   concept. Observed directly: `Get-Process -Id $pid` showed `MainWindowTitle=[Demo Vid
+   MCP]` for ~1.5s, then the process vanished — every single launch, deterministically.
+   **This is the same bug the fleet canonical `backend.rs.template` and the documented
+   example in `tauri_nsis_building.md` both shipped** — not repo-specific drift, a
+   template-level defect. **Fix**: exclude the caller's own PID
+   (`std::process::id()`) from every native-image kill in `free_port()`.
+2. **Even past #1, the window froze on launch** — Windows substituted a `"Demo Vid MCP
+   (Not Responding)"` **Ghost**-class placeholder window (confirmed via
+   `pywinauto.findwindows.find_elements()`: `class: Ghost`). `main.rs` called the
+   blocking `spawn_backend()` directly inside `.setup()`, which runs on the thread also
+   responsible for pumping the window's message loop — freezing the UI for however long
+   `free_port()` took (several sequential PowerShell subprocess spawns at minimum, up to
+   240s worst case). **Also present in `main.rs.template`** (the doc's own example in
+   `tauri_nsis_building.md` already used `tauri::async_runtime::spawn` correctly — the
+   template had drifted from its own documentation). **Fix**: run `spawn_backend()` on
+   its own `std::thread` so `setup()` returns immediately.
+
+**Verified genuinely fixed**, not just "no error reported": relaunched after both fixes,
+`Get-Process` showed `Responding=True` from the very first poll (t=0s) and stayed alive
+indefinitely; `pywinauto` reported the window's real class as `Tauri Window` (not
+`Ghost`), `visible=True`; `curl http://127.0.0.1:11134/api/health` and `/api/v1/diagnostics`
+both returned 200 with live data while the app sat on screen, responsive.
+
+Both template-level fixes propagated to `mcp-central-docs/templates/tauri-native/src/{backend.rs,main.rs}.template`
+and the documented `free_port()` example in `standards/rules/tauri_nsis_building.md`.
+Every repo that scaffolded a Tauri shell from this template before 2026-09-04 likely
+inherited both bugs and should be re-audited.
+
 **Known gaps not addressed in this pass** (deferred, tracked in
 `reports/assess-2026-09-03.md`): webapp font-size/contrast sweep (`text-xs`/
 `text-slate-400` etc., ~150+ occurrences across the SPA), full loading/error-state
