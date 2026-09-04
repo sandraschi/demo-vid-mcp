@@ -47,6 +47,9 @@ class JobQueue:
         aspect_ratio: str = "16:9",
         resolution: str = "720p",
         page_config: dict[str, str] | None = None,
+        voice: str = "heart",
+        music_enabled: bool = False,
+        music_prompt: str | None = None,
     ) -> dict[str, Any]:
         """Add a video generation job to the persistent queue."""
         job_id = f"job-{uuid.uuid4().hex[:8]}"
@@ -57,6 +60,9 @@ class JobQueue:
             "aspect_ratio": aspect_ratio,
             "resolution": resolution,
             "page_config": page_config,
+            "voice": voice,
+            "music_enabled": music_enabled,
+            "music_prompt": music_prompt,
             "status": "pending",
             "created_at": int(time.time()),
             "started_at": None,
@@ -103,6 +109,7 @@ class JobQueue:
 
     async def _process_queue(self) -> None:
         """Sequential FIFO worker processing jobs."""
+        from demo_vid_mcp.pipeline.music import DEFAULT_MUSIC_PROMPT
         from demo_vid_mcp.tools.generate import demo_vid_generate
 
         while True:
@@ -125,6 +132,9 @@ class JobQueue:
                         aspect_ratio=job.get("aspect_ratio", "16:9"),
                         resolution=job.get("resolution", "720p"),
                         page_config=job.get("page_config"),
+                        voice=job.get("voice", "heart"),
+                        music_enabled=job.get("music_enabled", False),
+                        music_prompt=job.get("music_prompt") or DEFAULT_MUSIC_PROMPT,
                     )
                     job["result"] = result
                     if result.get("success"):

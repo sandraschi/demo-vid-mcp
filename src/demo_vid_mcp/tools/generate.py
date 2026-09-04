@@ -16,6 +16,7 @@ from pydantic import Field
 from demo_vid_mcp.config import config
 from demo_vid_mcp.pipeline.composer import compose
 from demo_vid_mcp.pipeline.desktop_capture import record_desktop
+from demo_vid_mcp.pipeline.music import DEFAULT_MUSIC_PROMPT, generate_background_music
 from demo_vid_mcp.pipeline.recorder import record
 from demo_vid_mcp.pipeline.script import default_script, validate_script
 from demo_vid_mcp.pipeline.voiceover import generate_voiceover
@@ -196,6 +197,20 @@ async def demo_vid_generate(
             "auto-drafted script (ignored if script_yaml is given). See demo_vid_list_pages."
         ),
     ] = None,
+    voice: Annotated[
+        str, Field(description="speech-mcp voice: 'heart', 'sky', or 'adam'.")
+    ] = "heart",
+    music_enabled: Annotated[
+        bool,
+        Field(
+            description="Generate and mix in ambient background music via songgeneration-mcp, "
+            "ducked under the voiceover. Requires SONGGENERATION_MCP_URL configured."
+        ),
+    ] = False,
+    music_prompt: Annotated[
+        str,
+        Field(description="Text prompt describing the background music's mood/style."),
+    ] = DEFAULT_MUSIC_PROMPT,
     ctx: Context | None = None,
 ) -> dict:
     """Generate a demo video for a fleet repo.
@@ -226,6 +241,7 @@ async def demo_vid_generate(
     await demo_vid_generate(repo="chitchat", theme="light", aspect_ratio="9:16")
     await demo_vid_generate(repo="chitchat", base_url="http://127.0.0.1:10975")
     await demo_vid_generate(repo="arxiv-mcp", page_config={"search": "detail", "logs": "skip"})
+    await demo_vid_generate(repo="chitchat", music_enabled=True, music_prompt="upbeat lofi hip hop")
     await demo_vid_generate(repo="blender-mcp", script_yaml=open("data/scripts/blender-chair-demo.yaml").read())
     """
     if not repo or not repo.strip():
@@ -247,6 +263,11 @@ async def demo_vid_generate(
         script["aspect_ratio"] = aspect_ratio
     if resolution:
         script["resolution"] = resolution
+    if voice:
+        script["voice"] = voice
+    script["bg_music"] = music_enabled
+    if music_prompt:
+        script["music_prompt"] = music_prompt
 
     desktop_mode = _is_desktop_capture(script)
 
@@ -279,11 +300,26 @@ async def demo_vid_generate(
 
     stages = {}
 
-    # Voiceover and recording run in parallel. In desktop_mode, the "recording"
-    # is OBS capturing a native app window while mcp_call steps drive it live
-    # (see pipeline/desktop_capture.py) instead of Playwright recording a webapp.
+    # Voiceover, music and recording all run in parallel - music generation
+    # in particular can take up to two minutes (it's a real generative model
+    # call, not TTS), so it needs to overlap with recording rather than run
+    # after it. In desktop_mode, the "recording" is OBS capturing a native
+    # app window while mcp_call steps drive it live (see
+    # pipeline/desktop_capture.py) instead of Playwright recording a webapp.
     voice_task = asyncio.create_task(
         generate_voiceover(script, str(video_dir), config.speech_mcp_url)
+    )
+    music_task = (
+        asyncio.create_task(
+            generate_background_music(
+                script.get("music_prompt") or DEFAULT_MUSIC_PROMPT,
+                float(script.get("duration_target", 30)),
+                str(video_dir),
+                config.songgeneration_mcp_url,
+            )
+        )
+        if script.get("bg_music")
+        else None
     )
     if desktop_mode:
         record_task = asyncio.create_task(
@@ -303,6 +339,10 @@ async def demo_vid_generate(
     record_result = await record_task
     stages["recording"] = record_result
 
+    music_result = await music_task if music_task else None
+    if music_result is not None:
+        stages["music"] = music_result
+
     if not record_result["success"]:
         return {
             "success": False,
@@ -321,6 +361,7 @@ async def demo_vid_generate(
         record_result.get("video_path"),
         voice_result.get("audio_path"),
         str(video_dir),
+        music_path=(music_result or {}).get("audio_path"),
     )
     stages["compose"] = compose_result
 
