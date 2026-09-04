@@ -6,7 +6,7 @@ from unittest.mock import patch
 import pytest
 
 from demo_vid_mcp.config import config
-from demo_vid_mcp.pipeline import composer, recorder, voiceover
+from demo_vid_mcp.pipeline import composer, music, recorder, voiceover
 
 
 @pytest.mark.anyio
@@ -26,6 +26,39 @@ async def test_composer_no_ffmpeg(tmp_path):
         result = await composer.compose({"title": "test"}, str(video), None, str(tmp_path))
         assert result["success"] is False
         assert "FFmpeg not found" in result.get("error", "")
+
+
+def test_build_audio_graph_neither():
+    assert composer._build_audio_graph(None, None) == (None, None)
+
+
+def test_build_audio_graph_voice_only_maps_directly_no_filtering():
+    """No music present - just map the voice stream, same as before music
+    support existed (no filter_complex needed at all)."""
+    assert composer._build_audio_graph(1, None) == (None, "1:a")
+
+
+def test_build_audio_graph_music_only_fixed_volume_no_duck():
+    """Nothing to duck against without a voice track - just turn it down."""
+    graph, out = composer._build_audio_graph(None, 1)
+    assert out == "[aout]"
+    assert graph == "[1:a]volume=0.35[aout]"
+
+
+def test_build_audio_graph_both_ducks_music_under_voice():
+    graph, out = composer._build_audio_graph(1, 2)
+    assert out == "[aout]"
+    assert graph is not None
+    assert "sidechaincompress" in graph
+    assert "[2:a]" in graph  # music is the ducked/main input
+    assert "[1:a]" in graph  # voice is the sidechain trigger, and in the final amix
+
+
+@pytest.mark.anyio
+async def test_generate_background_music_not_configured():
+    result = await music.generate_background_music("ambient", 30, "/tmp", None)
+    assert result["success"] is False
+    assert "not configured" in result.get("error", "")
 
 
 @pytest.mark.anyio

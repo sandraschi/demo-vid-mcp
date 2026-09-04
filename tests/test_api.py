@@ -65,3 +65,44 @@ def test_script_draft_invalid():
 def test_generate_invalid_repo():
     r = client.post("/api/generate", json={"repo": ""})
     assert r.status_code == 200
+
+
+def test_repo_pages():
+    r = client.get("/api/repos/chitchat/pages")
+    assert r.status_code == 200
+    data = r.json()
+    assert data["success"] is True
+    assert "pages" in data
+
+
+def test_health_music_not_configured():
+    """Regression guard for the same class of bug as speech: health checks
+    must report unconfigured cleanly rather than raising."""
+    r = client.get("/api/health/music")
+    assert r.status_code == 200
+    data = r.json()
+    assert "detected" in data
+
+
+def test_health_speech_reports_something():
+    r = client.get("/api/health/speech")
+    assert r.status_code == 200
+    assert "detected" in r.json()
+
+
+def test_speech_preview_not_configured(monkeypatch):
+    from demo_vid_mcp import app as app_module
+
+    monkeypatch.setattr(app_module.config, "speech_mcp_url", None)
+    r = client.get("/api/speech/preview", params={"text": "hi"})
+    assert r.status_code == 400
+    assert r.json()["success"] is False
+
+
+def test_music_preview_not_configured(monkeypatch):
+    from demo_vid_mcp import app as app_module
+
+    monkeypatch.setattr(app_module.config, "songgeneration_mcp_url", None)
+    r = client.post("/api/music/preview", json={"prompt": "test"})
+    assert r.status_code == 502
+    assert r.json()["success"] is False
