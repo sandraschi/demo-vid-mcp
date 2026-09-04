@@ -1,5 +1,6 @@
 import { RefreshCw, Terminal } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { apiUrl } from "../lib/api";
 
 interface LogEntry {
   time: string;
@@ -20,7 +21,7 @@ export default function Logs() {
     setLoading(true);
     try {
       const params = new URLSearchParams({ limit: "100", level, search });
-      const r = await fetch(`/api/logs?${params}`);
+      const r = await fetch(apiUrl(`/api/logs?${params}`));
       if (r.ok) {
         const d = await r.json();
         setLogs(d.logs || []);

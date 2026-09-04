@@ -8,6 +8,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { apiUrl } from "../lib/api";
 
 interface Job {
   id: string;
@@ -29,7 +30,7 @@ export default function Queue() {
 
   const loadQueue = useCallback(async () => {
     try {
-      const r = await fetch("/api/queue");
+      const r = await fetch(apiUrl("/api/queue"));
       if (r.ok) {
         const d = await r.json();
         setJobs(d.jobs || []);
@@ -47,7 +48,7 @@ export default function Queue() {
 
   const handleCancel = async (jobId: string) => {
     try {
-      await fetch(`/api/queue/${jobId}`, { method: "DELETE" });
+      await fetch(apiUrl(`/api/queue/${jobId}`), { method: "DELETE" });
       loadQueue();
     } catch {
       /* ignore */
