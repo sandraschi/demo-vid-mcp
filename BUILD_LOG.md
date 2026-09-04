@@ -342,3 +342,32 @@ this wiring.
 + the ducking mix), since no songgeneration-mcp backend was running locally to generate
 a real track against. The failure path (unconfigured/unreachable) is verified; the
 success path is verified only with a stand-in audio file, not a real generated track.
+
+## 2026-09-04 update 8 — CSP had no media-src, silently blocking all audio/video
+
+User report: "in the speech page, it says connected, but the generate button does
+nothing." Root cause, once tracked down: `tauri.conf.json`'s CSP declared `connect-src`
+and `img-src` but never `media-src`, which falls back to `default-src 'self'` -
+`'self'` is the document's own origin (`tauri://localhost`), which covers neither the
+`blob:` URLs the Speech/Music previews create nor `http://127.0.0.1:11134` (used by
+Depot/Detail's `<video>` player). Both were silently broken in the packaged app this
+whole time - CSP blocks a media element's `src` assignment with no JS exception and no
+console output visible without devtools, so it just looked like the button did nothing.
+
+Diagnosed by reproducing the *exact* fetch→blob→`audio.src`→`play()` flow used in
+`Speech.tsx` from a real browser (via the webapp's own dev server, proxied to the live
+packaged backend) - it worked perfectly there, proving the JS logic was correct and
+pointing squarely at something packaged-app-specific. That ruled out my first instinct
+(a `pywinauto` click-coordinate miss, which is genuinely a real limitation of testing
+WebView2 content that way - but not the actual bug here).
+
+Fixed: `media-src 'self' blob: http://127.0.0.1:11134` added to the CSP. Also added
+`onError` handlers to both pages' `<audio>` elements so a future media-load failure
+surfaces as a visible error instead of silently doing nothing like this one did.
+
+**Verified in the rebuilt, reinstalled packaged app**: clicked Preview on the Speech
+page for real - audio now plays through to completion (`0:03 / 0:03`, progress bar
+filled), confirmed via screenshot. This also fixes Depot/Detail's `<video>` player,
+which was silently affected by the identical CSP gap the whole time (not separately
+re-verified after the fix, since the mechanism is provably identical, but worth a real
+click-through next time that page is touched).
