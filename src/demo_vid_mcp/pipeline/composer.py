@@ -29,6 +29,29 @@ def _find_ffmpeg() -> str | None:
 _FFMPEG_PATH = _find_ffmpeg()
 
 
+def _find_font() -> str | None:
+    """Locate a usable TTF for FFmpeg's drawtext filter.
+
+    drawtext with no explicit fontfile= falls back to fontconfig's default
+    font lookup - Windows has no fonts.conf, so any fontconfig-enabled
+    FFmpeg build (e.g. the Gyan full_build from winget) crashes with
+    "Fontconfig error: Cannot load default config file" (surfaces as a
+    raw access-violation exit code, not a clean error return). Passing
+    fontfile= explicitly bypasses fontconfig lookup entirely.
+    """
+    candidates = [
+        "C:\\Windows\\Fonts\\segoeui.ttf",
+        "C:\\Windows\\Fonts\\arial.ttf",
+    ]
+    for c in candidates:
+        if Path(c).exists():
+            return c
+    return None
+
+
+_FONT_PATH = _find_font()
+
+
 def generate_subtitles(steps: list[dict], output_dir: Path) -> tuple[Path | None, Path | None]:
     """Generate WebVTT and SRT subtitle sidecars based on narration step timings."""
     vtt_lines = ["WEBVTT", ""]
@@ -153,9 +176,19 @@ async def compose(
             "medium",
             "-crf",
             "23",
-            "-vf",
-            f"drawtext=text='{safe_title}':fontsize=24:fontcolor=white:x=10:y=10",
         ]
+        if _FONT_PATH:
+            # fontfile= bypasses fontconfig's default-font lookup entirely -
+            # required on Windows (see _find_font()). Escape backslashes and
+            # the drive-letter colon per FFmpeg filtergraph syntax.
+            safe_font = _FONT_PATH.replace("\\", "/").replace(":", r"\:")
+            drawtext = (
+                f"drawtext=fontfile='{safe_font}':text='{safe_title}':"
+                "fontsize=24:fontcolor=white:x=10:y=10"
+            )
+            cmd += ["-vf", drawtext]
+        else:
+            logger.warning("No usable font found for drawtext - composing without a title overlay")
         if audio_file:
             cmd += ["-c:a", "aac", "-b:a", "128k"]
         else:
