@@ -48,7 +48,12 @@ class Config:
     # URL (e.g. "http://127.0.0.1:10793/mcp"), not just host:port - they're
     # used with fastmcp.Client, which speaks the real MCP protocol, since
     # fleet servers do NOT share a uniform REST tool-call shortcut.
+    # speech_mcp_url and songgeneration_mcp_url are exceptions to the "full
+    # MCP endpoint" rule above - both are called over their plain REST APIs
+    # (httpx directly), not fastmcp.Client, so these are just the REST base
+    # (e.g. "http://127.0.0.1:10909", no /mcp suffix).
     speech_mcp_url: str | None = os.getenv("SPEECH_MCP_URL")
+    songgeneration_mcp_url: str | None = os.getenv("SONGGENERATION_MCP_URL")
     blender_mcp_url: str | None = os.getenv("BLENDER_MCP_URL")
     gimp_mcp_url: str | None = os.getenv("GIMP_MCP_URL")
     resolve_mcp_url: str | None = os.getenv("DAVINCI_RESOLVE_MCP_URL")
