@@ -1,10 +1,19 @@
 import { FileText, Send } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { apiUrl } from "../lib/api";
 
 interface RepoCategory {
   name: string;
   repos: string[];
+}
+
+type PageLevel = "skip" | "show" | "detail";
+
+interface RepoPage {
+  name: string;
+  path: string;
+  purpose: string | null;
+  level: PageLevel;
 }
 
 export default function Generate() {
@@ -15,6 +24,9 @@ export default function Generate() {
   const [busy, setBusy] = useState(false);
   const [drafting, setDrafting] = useState(false);
   const [result, setResult] = useState<string | null>(null);
+  const [pages, setPages] = useState<RepoPage[]>([]);
+  const [pageLevels, setPageLevels] = useState<Record<string, PageLevel>>({});
+  const [loadingPages, setLoadingPages] = useState(false);
 
   useEffect(() => {
     fetch(apiUrl("/api/repos"))
@@ -22,6 +34,39 @@ export default function Generate() {
       .then((d) => setCategories(d.categories || []))
       .catch(() => {});
   }, []);
+
+  useEffect(() => {
+    if (!selectedRepo) {
+      setPages([]);
+      setPageLevels({});
+      return;
+    }
+    setLoadingPages(true);
+    fetch(apiUrl(`/api/repos/${encodeURIComponent(selectedRepo)}/pages`))
+      .then((r) => r.json())
+      .then((d) => {
+        const found: RepoPage[] = d.pages || [];
+        setPages(found);
+        setPageLevels(Object.fromEntries(found.map((p) => [p.name, p.level])));
+      })
+      .catch(() => {
+        setPages([]);
+        setPageLevels({});
+      })
+      .finally(() => setLoadingPages(false));
+  }, [selectedRepo]);
+
+  // Only send overrides that differ from the backend's own default - an
+  // empty object means "just use the keyword heuristic", same as before
+  // this checklist existed.
+  const pageConfig = useMemo(() => {
+    const overrides: Record<string, string> = {};
+    for (const p of pages) {
+      const level = pageLevels[p.name];
+      if (level && level !== p.level) overrides[p.name] = level;
+    }
+    return overrides;
+  }, [pages, pageLevels]);
 
   const currentRepos = categories.find((c) => c.name === selectedCat)?.repos || [];
 
@@ -32,7 +77,7 @@ export default function Generate() {
       const r = await fetch(apiUrl("/api/script-draft"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ repo: selectedRepo }),
+        body: JSON.stringify({ repo: selectedRepo, page_config: pageConfig }),
       });
       const d = await r.json();
       if (d.success && d.script) {
@@ -47,14 +92,14 @@ export default function Generate() {
     } finally {
       setDrafting(false);
     }
-  }, [selectedRepo]);
+  }, [selectedRepo, pageConfig]);
 
   const handleGenerate = useCallback(async () => {
     if (!selectedRepo) return;
     setBusy(true);
     setResult(null);
     try {
-      const body: any = { repo: selectedRepo };
+      const body: any = { repo: selectedRepo, page_config: pageConfig };
       const trimmed = script.trim();
       if (trimmed && (trimmed.startsWith("{") || trimmed.startsWith("title:"))) {
         body.script_yaml = trimmed;
@@ -73,7 +118,7 @@ export default function Generate() {
     } finally {
       setBusy(false);
     }
-  }, [selectedRepo, script]);
+  }, [selectedRepo, script, pageConfig]);
 
   const [aspectRatio, setAspectRatio] = useState("16:9");
   const [resolution, setResolution] = useState("720p");
@@ -88,6 +133,7 @@ export default function Generate() {
         repo: selectedRepo,
         aspect_ratio: aspectRatio,
         resolution: resolution,
+        page_config: pageConfig,
       };
       const trimmed = script.trim();
       if (trimmed && (trimmed.startsWith("{") || trimmed.startsWith("title:"))) {
@@ -111,7 +157,7 @@ export default function Generate() {
     } finally {
       setEnqueueing(false);
     }
-  }, [selectedRepo, script, aspectRatio, resolution]);
+  }, [selectedRepo, script, aspectRatio, resolution, pageConfig]);
 
   return (
     <div className="p-6 max-w-3xl mx-auto">
@@ -180,6 +226,44 @@ export default function Generate() {
             </select>
           </div>
         </div>
+
+        {selectedRepo && (loadingPages || pages.length > 0) && (
+          <div>
+            <label className="block text-sm text-zinc-400 mb-1">Pages to include</label>
+            {loadingPages ? (
+              <p className="text-xs text-zinc-500">Loading pages...</p>
+            ) : (
+              <div className="border border-zinc-700 rounded-md divide-y divide-zinc-800">
+                {pages.map((p) => (
+                  <div key={p.name} className="flex items-center justify-between gap-3 px-3 py-2">
+                    <div className="min-w-0">
+                      <div className="text-sm text-zinc-200 truncate">{p.name}</div>
+                      {p.purpose && (
+                        <div className="text-xs text-zinc-500 truncate">{p.purpose}</div>
+                      )}
+                    </div>
+                    <div className="flex shrink-0 rounded-md border border-zinc-700 overflow-hidden text-xs">
+                      {(["skip", "show", "detail"] as PageLevel[]).map((lvl) => (
+                        <button
+                          key={lvl}
+                          type="button"
+                          onClick={() => setPageLevels((prev) => ({ ...prev, [p.name]: lvl }))}
+                          className={`px-2.5 py-1 capitalize cursor-pointer ${
+                            (pageLevels[p.name] ?? p.level) === lvl
+                              ? "bg-amber-600 text-white"
+                              : "bg-zinc-800 text-zinc-400 hover:text-white"
+                          }`}
+                        >
+                          {lvl}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         <div>
           <div className="flex items-center justify-between mb-1">
