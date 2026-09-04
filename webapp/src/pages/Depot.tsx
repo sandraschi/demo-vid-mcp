@@ -1,5 +1,6 @@
 import { Code, FileDown, Play, RotateCcw, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { apiUrl } from "../lib/api";
 
 interface DepotEntry {
   repo: string;
@@ -125,7 +126,7 @@ export default function Depot() {
 
   const load = useCallback(async () => {
     try {
-      const r = await fetch("/api/depot");
+      const r = await fetch(apiUrl("/api/depot"));
       if (r.ok) {
         const d = await r.json();
         setEntries(d.repos || []);
@@ -142,7 +143,9 @@ export default function Depot() {
   const handleInsert = useCallback(
     async (repo: string) => {
       try {
-        const r = await fetch(`/api/videos/${encodeURIComponent(repo)}/insert`, { method: "POST" });
+        const r = await fetch(apiUrl(`/api/videos/${encodeURIComponent(repo)}/insert`), {
+          method: "POST",
+        });
         const d = await r.json();
         setRegenResult(d.message || "Inserted");
         load();
@@ -157,7 +160,7 @@ export default function Depot() {
     async (repo: string) => {
       if (!confirm(`Delete all videos for ${repo}?`)) return;
       try {
-        await fetch(`/api/videos/${encodeURIComponent(repo)}`, {
+        await fetch(apiUrl(`/api/videos/${encodeURIComponent(repo)}`), {
           method: "DELETE",
         });
         load();
@@ -204,7 +207,7 @@ export default function Depot() {
       setRegenBusy(entry.repo);
       setRegenResult(null);
       try {
-        const r = await fetch("/api/generate", {
+        const r = await fetch(apiUrl("/api/generate"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ repo: entry.repo, script_yaml: entry.script }),
@@ -268,12 +271,12 @@ export default function Depot() {
                       controls
                       autoPlay
                       className="absolute inset-0 w-full h-full"
-                      src={v.video_path}
-                      poster={v.poster_path || undefined}
+                      src={apiUrl(v.video_path)}
+                      poster={v.poster_path ? apiUrl(v.poster_path) : undefined}
                     >
                       {v.vtt_path && (
                         <track
-                          src={v.vtt_path}
+                          src={apiUrl(v.vtt_path)}
                           kind="subtitles"
                           srcLang="en"
                           label="English"
@@ -286,7 +289,7 @@ export default function Depot() {
                     <div className="absolute inset-0 flex items-center justify-center">
                       {v.poster_path ? (
                         <img
-                          src={v.poster_path}
+                          src={apiUrl(v.poster_path)}
                           alt={v.repo}
                           className="absolute inset-0 w-full h-full object-cover"
                         />

@@ -1,3 +1,4 @@
+import { apiUrl } from "@/lib/api";
 import { useSearchParams } from "@/lib/routing";
 import { useCallback, useEffect, useState } from "react";
 
@@ -11,14 +12,14 @@ export default function Detail() {
   const [statusMsg, setStatusMsg] = useState<string | null>(null);
 
   const loadDetail = useCallback(() => {
-    fetch("/api/videos")
+    fetch(apiUrl("/api/videos"))
       .then((r) => r.json())
       .then((d) => {
         const found = (d.videos || []).find((v: any) => v.name === name || v.repo === name);
         if (found) {
-          setVideoUrl(found.video_path);
-          setPosterUrl(found.poster_path);
-          setVttUrl(found.vtt_path);
+          if (found.video_path) setVideoUrl(apiUrl(found.video_path));
+          if (found.poster_path) setPosterUrl(apiUrl(found.poster_path));
+          if (found.vtt_path) setVttUrl(apiUrl(found.vtt_path));
         }
       })
       .catch(() => {});
@@ -32,7 +33,7 @@ export default function Detail() {
     setGenerating(true);
     setStatusMsg("Re-generating video...");
     try {
-      const r = await fetch("/api/generate", {
+      const r = await fetch(apiUrl("/api/generate"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ repo: name }),

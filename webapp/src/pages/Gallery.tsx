@@ -1,5 +1,6 @@
 import { Film, Play } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { apiUrl } from "../lib/api";
 
 interface VideoItem {
   name: string;
@@ -14,7 +15,7 @@ export default function Gallery() {
 
   const load = useCallback(async () => {
     try {
-      const r = await fetch("/api/videos");
+      const r = await fetch(apiUrl("/api/videos"));
       if (r.ok) {
         const d = await r.json();
         setVideos(d.videos || []);

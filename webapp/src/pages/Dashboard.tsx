@@ -1,5 +1,6 @@
 import { Camera, Film, Loader2, Monitor, Music, RotateCw } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { apiUrl } from "../lib/api";
 import { useBackendStore } from "../store/backend";
 
 export default function Dashboard() {
@@ -16,7 +17,7 @@ export default function Dashboard() {
   const refresh = useCallback(async () => {
     useBackendStore.getState().refresh();
     try {
-      const r = await fetch("/api/health");
+      const r = await fetch(apiUrl("/api/health"));
       if (r.ok) {
         const d = await r.json();
         setStats(d);
@@ -26,7 +27,7 @@ export default function Dashboard() {
     }
 
     try {
-      const d = await fetch("/api/videos").then((r) => r.json());
+      const d = await fetch(apiUrl("/api/videos")).then((r) => r.json());
       const count = (d.videos || d.repos || []).length;
       setVideoCount(count);
     } catch {
@@ -34,7 +35,7 @@ export default function Dashboard() {
     }
 
     try {
-      const r = await fetch("/api/health/speech").then((r) => r.json());
+      const r = await fetch(apiUrl("/api/health/speech")).then((r) => r.json());
       setSpeechOk(r.detected || false);
     } catch {
       setSpeechOk(false);

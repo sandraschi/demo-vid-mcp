@@ -1,5 +1,6 @@
 import { FileText, Send } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { apiUrl } from "../lib/api";
 
 interface RepoCategory {
   name: string;
@@ -16,7 +17,7 @@ export default function Generate() {
   const [result, setResult] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch("/api/repos")
+    fetch(apiUrl("/api/repos"))
       .then((r) => r.json())
       .then((d) => setCategories(d.categories || []))
       .catch(() => {});
@@ -28,7 +29,7 @@ export default function Generate() {
     if (!selectedRepo) return;
     setDrafting(true);
     try {
-      const r = await fetch("/api/script-draft", {
+      const r = await fetch(apiUrl("/api/script-draft"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ repo: selectedRepo }),
@@ -58,7 +59,7 @@ export default function Generate() {
       if (trimmed && (trimmed.startsWith("{") || trimmed.startsWith("title:"))) {
         body.script_yaml = trimmed;
       }
-      const r = await fetch("/api/generate", {
+      const r = await fetch(apiUrl("/api/generate"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
@@ -92,7 +93,7 @@ export default function Generate() {
       if (trimmed && (trimmed.startsWith("{") || trimmed.startsWith("title:"))) {
         body.script_yaml = trimmed;
       }
-      const r = await fetch("/api/queue", {
+      const r = await fetch(apiUrl("/api/queue"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
