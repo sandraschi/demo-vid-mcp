@@ -371,3 +371,66 @@ filled), confirmed via screenshot. This also fixes Depot/Detail's `<video>` play
 which was silently affected by the identical CSP gap the whole time (not separately
 re-verified after the fix, since the mechanism is provably identical, but worth a real
 click-through next time that page is touched).
+
+## 2026-09-04 update 9 — "let's get fancy": real transitions + sound effects
+
+User asked to integrate `sfx-mcp` (sound effects) and `vfx-mcp` (video transitions),
+picking the ambitious option for both when asked: real clip-per-page recording with
+crossfade transitions between pages (not just intro/outro polish), and real sfx
+resolution built now rather than deferred until a FreeSound API key exists.
+
+**SFX**: Choreography's "Sound Effect" step type has existed in the UI since before
+this session but was never implemented - `pipeline/sfx.py`'s `resolve_all_sfx()` finds
+every `action: sfx` step, computes its timestamp from cumulative wait durations, and
+resolves it via sfx-mcp (FreeSound CC0 wrapper, real MCP protocol). `composer.py`'s
+audio graph generalized to accept N timed sfx clips (delayed via `adelay`, mixed in
+alongside voice/music) - verified with a real 4-input ffmpeg run.
+
+**VFX**: `playwright-capture.js` now records one clip per page-visit segment (opening a
+fresh Playwright page per `goto`, closing the previous one finalizes its own .webm)
+instead of one continuous capture - single-page scripts still get exactly one clip,
+byte-for-byte the same as before. `pipeline/vfx.py`'s `stitch_clips()` joins them via
+vfx-mcp's real crossfade/wipe/slide transitions when available, falling back to a plain
+hard-cut concat (no re-encode) otherwise - `recorder.py`'s own return contract never
+changed, so `compose()`/`generate.py` needed no changes for this at all.
+
+**The real debugging story** (this took five rounds to actually nail down, each one
+revealing the next): connecting to vfx-mcp at all first required two fixes in that
+repo's own `server.py` (`/mcp` was completely unreachable - wrong `http_app()` path arg,
+and no `lifespan=mcp_app.lifespan` wired into the FastAPI app, so FastMCP's session
+manager never started). Once connected, the "crossfade" transition itself was broken -
+not a real FFmpeg filter name (fixed to `xfade=transition=fade`), and every xfade-based
+transition was missing its `offset` parameter, so the blend started at frame 0 instead
+of the actual clip boundary (fixed via `ffprobe`-based duration probing). Then a
+generic-looking "transition failed" turned out to be *my own* bug reading the wrong
+JSON key (`error` vs. vfx-mcp's actual `message` field) - once fixed, the real error
+was still hidden behind a `[:500]` truncation that only ever showed FFmpeg's static
+version banner (fixed to keep the *last* 1000 chars, where the actual error lives).
+That finally revealed the true root cause: `config.data_dir` defaults to the bare
+relative string `"data"`, which resolves fine for every file operation this process
+does itself, but vfx-mcp/sfx-mcp are *separate processes* with their own cwd - handing
+them a relative path over MCP resolved it against the wrong directory entirely. Fixed
+by resolving every path to absolute before it leaves this process (both `vfx.py` and
+`sfx.py` had this bug; `music.py` was already safe since songgeneration-mcp returns its
+own file path rather than accepting a destination).
+
+Also fixed while here: `.env.example`'s `SFX_MCP_URL`/`VFX_MCP_URL` (and `STEMS_MCP_URL`
+in passing) pointed at the wrong ports entirely (frontend instead of backend, no `/mcp`
+suffix) - copy-paste errors that predate this session, never caught because nothing had
+ever actually tried to connect through them until now.
+
+**Verified end-to-end in the rebuilt, reinstalled packaged app, for real**: a generation
+with a `sfx` step and three page transitions came back `"Stitched 4 clips
+(transitions=True)"` in the backend's own logs - no fallback, real crossfades all the
+way through. The API response's own `recording.video_path` field visibly changed from a
+relative to an absolute path between runs, independently confirming the fix. sfx-mcp
+itself wasn't running (no FreeSound key configured yet), so the sfx step correctly
+degraded to a skipped-with-warning, exactly as designed - the graceful-degrade path was
+exercised for real, not just unit-tested. Also found and fixed 3 real bugs in vfx-mcp
+itself along the way (its own commits), meaning any other fleet consumer of vfx-mcp's
+`/mcp` endpoint was equally broken before this and is now fixed fleet-wide, not just for
+demo-vid-mcp.
+
+**Not yet built this round**: dedicated SFX/VFX settings pages (mirroring Speech/Music) -
+sfx/vfx currently only reachable via Choreography's raw script fields
+(`action: sfx`, `transition_style`), no Generate-page toggle or checklist UI yet.
