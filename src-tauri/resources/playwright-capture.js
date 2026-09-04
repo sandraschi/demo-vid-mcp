@@ -1,12 +1,21 @@
 /**
  * Playwright capture script for demo-vid-mcp.
- * Usage: node scripts/playwright-capture.js <steps.json> <output-base> [theme]
+ * Usage: node scripts/playwright-capture.js <steps.json> <output-base> [theme] [aspect] [res]
  *
  * Accepts a JSON array of steps, records browser interactions as .webm.
  * theme: "dark" (default) | "light" — forces the fleet theme class on the
  * page so demo videos match the requested mode (see chat_skills_prefab_standard
  * §7.1: webapps with the optional light toggle must be forced before capture).
  * Fails if the page appears blank or returns an error status.
+ *
+ * Records one clip PER page-visit segment (a run of steps starting at a
+ * "goto" and continuing until the next "goto" or the end), not one
+ * continuous recording — each "goto" opens a fresh Playwright page (Chromium
+ * tab) in the same recording context, and closing a page finalizes its own
+ * .webm. This lets recorder.py/pipeline/vfx.py join the clips with real
+ * crossfade/wipe/slide transitions between pages instead of a single flat
+ * capture. Emits <output-base>.clips.json listing the resulting clip paths
+ * in order; recorder.py stitches them.
  */
 const { chromium } = require("playwright");
 const fs = require("fs");
@@ -40,12 +49,13 @@ async function main() {
     deviceScaleFactor: 1,
     recordVideo: { dir: outputDir, size: { width, height } },
   });
-  const page = await context.newPage();
 
-  // Force the requested theme on every navigation (fleet dark default, or
-  // light for bright videos). Handles both the class toggle and localStorage
-  // persistence used by fleet light-mode toggles.
-  await page.addInitScript((mode) => {
+  // Context-level addInitScript applies to every page created in this
+  // context, past and future - required now that recording spans multiple
+  // pages (one per goto-delimited segment) instead of a single page, so
+  // each new page still gets the theme forced and click ripples wired up
+  // without re-registering per page.
+  await context.addInitScript((mode) => {
     const dark = mode === "dark";
     document.documentElement.classList.toggle("dark", dark);
     try {
@@ -56,8 +66,7 @@ async function main() {
     } catch { /* cross-origin / privacy mode */ }
   }, theme);
 
-  // Inject visual click ripples on user click interactions
-  await page.addInitScript(() => {
+  await context.addInitScript(() => {
     window.addEventListener(
       "click",
       (e) => {
@@ -90,85 +99,109 @@ async function main() {
     );
   });
 
+  const clips = [];
+  let currentPage = null;
+
+  async function finalizeSegment() {
+    if (!currentPage) return;
+    const video = currentPage.video();
+    await currentPage.close();
+    if (video) {
+      try {
+        clips.push(await video.path());
+      } catch (err) {
+        console.error("Failed to finalize clip:", err.message);
+      }
+    }
+    currentPage = null;
+  }
 
   for (const step of steps) {
     try {
-      switch (step.action) {
-        case "goto": {
-          const resp = await page.goto(step.url, { waitUntil: "load", timeout: 15000 });
-          if (resp && resp.status() >= 400) {
-            console.error(`HTTP ${resp.status()} at ${step.url} — aborting`);
-            process.exit(1);
-          }
-          const bodyText = await page.evaluate(() => document.body?.innerText?.trim() || "");
-          const bodyHtml = await page.evaluate(() => document.body?.innerHTML?.trim() || "");
-          if (!bodyHtml || bodyHtml === "<div id=\"root\"></div>" || bodyHtml.length < 10) {
-            console.error(`Blank page at ${step.url} — target webapp may not be running`);
-            process.exit(1);
-          }
-          break;
+      if (step.action === "goto") {
+        await finalizeSegment();
+        currentPage = await context.newPage();
+        const resp = await currentPage.goto(step.url, { waitUntil: "load", timeout: 15000 });
+        if (resp && resp.status() >= 400) {
+          console.error(`HTTP ${resp.status()} at ${step.url} — aborting`);
+          process.exit(1);
         }
-        case "click":
-          try { await page.click(step.target, { timeout: 5000 }); } catch { /* ok */ }
-          break;
-        case "type":
-          try { await page.fill(step.target, step.text || ""); } catch { /* ok */ }
-          break;
-        case "text_overlay":
-          await page.evaluate((text) => {
-            const prev = document.getElementById("__demo_vid_overlay");
-            if (prev) prev.remove();
-            const el = document.createElement("div");
-            el.id = "__demo_vid_overlay";
-            el.textContent = text || "";
-            Object.assign(el.style, {
-              position: "fixed",
-              inset: "0",
-              zIndex: "999998",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              textAlign: "center",
-              padding: "10%",
-              background: "rgba(9, 9, 11, 0.92)",
-              color: "#fafafa",
-              fontFamily: "system-ui, sans-serif",
-              fontSize: "clamp(24px, 4vw, 56px)",
-              fontWeight: "700",
-              lineHeight: "1.4",
-              whiteSpace: "pre-wrap",
-            });
-            document.documentElement.appendChild(el);
-          }, step.text || "");
-          break;
-        case "end": {
-          // Clear any lingering overlay before the final hold/fade so the
-          // closing frame shows the real page, not a stale title card.
-          await page.evaluate(() => {
-            const prev = document.getElementById("__demo_vid_overlay");
-            if (prev) prev.remove();
-          }).catch(() => {});
-          break;
+        const bodyHtml = await currentPage.evaluate(() => document.body?.innerHTML?.trim() || "");
+        if (!bodyHtml || bodyHtml === "<div id=\"root\"></div>" || bodyHtml.length < 10) {
+          console.error(`Blank page at ${step.url} — target webapp may not be running`);
+          process.exit(1);
+        }
+      } else {
+        if (!currentPage) currentPage = await context.newPage();
+        switch (step.action) {
+          case "click":
+            try { await currentPage.click(step.target, { timeout: 5000 }); } catch { /* ok */ }
+            break;
+          case "type":
+            try { await currentPage.fill(step.target, step.text || ""); } catch { /* ok */ }
+            break;
+          case "text_overlay":
+            await currentPage.evaluate((text) => {
+              const prev = document.getElementById("__demo_vid_overlay");
+              if (prev) prev.remove();
+              const el = document.createElement("div");
+              el.id = "__demo_vid_overlay";
+              el.textContent = text || "";
+              Object.assign(el.style, {
+                position: "fixed",
+                inset: "0",
+                zIndex: "999998",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                textAlign: "center",
+                padding: "10%",
+                background: "rgba(9, 9, 11, 0.92)",
+                color: "#fafafa",
+                fontFamily: "system-ui, sans-serif",
+                fontSize: "clamp(24px, 4vw, 56px)",
+                fontWeight: "700",
+                lineHeight: "1.4",
+                whiteSpace: "pre-wrap",
+              });
+              document.documentElement.appendChild(el);
+            }, step.text || "");
+            break;
+          case "end": {
+            // Clear any lingering overlay before the final hold/fade so the
+            // closing frame shows the real page, not a stale title card.
+            await currentPage.evaluate(() => {
+              const prev = document.getElementById("__demo_vid_overlay");
+              if (prev) prev.remove();
+            }).catch(() => {});
+            break;
+          }
+          // "sfx" and any other action type: no on-page effect - resolved
+          // and mixed in separately as timed audio (see pipeline/sfx.py).
+          // Falls through here as a no-op, same as an unrecognized action.
         }
       }
-      if (step.wait) await page.waitForTimeout(step.wait * 1000);
+      if (step.wait) await currentPage.waitForTimeout(step.wait * 1000);
     } catch (err) {
       console.error("Step failed:", step.action, err.message);
       process.exit(1);
     }
   }
+  await finalizeSegment();
 
   await context.close();
   await browser.close();
 
-  if (fs.existsSync(outputDir)) {
-    const files = fs.readdirSync(outputDir).filter(f => f.endsWith(".webm"));
-    if (files.length > 0) {
-      const src = path.join(outputDir, files[0]);
-      const dst = outputBase.endsWith(".webm") ? outputBase : outputBase + ".webm";
-      try { fs.renameSync(src, dst); } catch { /* ok */ }
-    }
+  const manifestPath = `${outputBase}.clips.json`;
+  if (clips.length === 1) {
+    const dst = outputBase.endsWith(".webm") ? outputBase : `${outputBase}.webm`;
+    try {
+      fs.renameSync(clips[0], dst);
+      clips[0] = dst;
+    } catch { /* keep original path if rename fails */ }
   }
+  fs.writeFileSync(manifestPath, JSON.stringify(clips));
+
   process.exit(0);
 }
 

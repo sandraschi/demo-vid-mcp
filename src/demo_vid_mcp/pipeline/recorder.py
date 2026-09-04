@@ -10,6 +10,9 @@ import subprocess
 import sys
 from pathlib import Path
 
+from demo_vid_mcp.config import config
+from demo_vid_mcp.pipeline.vfx import DEFAULT_TRANSITION, stitch_clips
+
 logger = logging.getLogger("demo-vid-mcp.recorder")
 
 
@@ -174,25 +177,57 @@ async def record(script: dict, output_dir: str, theme: str = "dark") -> dict:
             "suggestions": ["Check the target webapp is running and has actual content"],
         }
 
-    # Find the output webm
-    output = Path(output_dir) / "recording.webm"
-    if not output.exists():
-        base = Path(output_dir) / "recording"
-        if base.exists():
-            base.rename(output)
-        else:
-            webms = list(Path(output_dir).glob("*.webm"))
-            if webms:
-                output = webms[0]
-            else:
-                return {
-                    "success": False,
-                    "error": "Recording produced no video file",
-                    "suggestions": [
-                        "Check Playwright is installed: npx playwright install chromium",
-                        "Check the target URLs resolve in a browser",
-                    ],
-                }
+    # playwright-capture.js records one clip per page-visit segment (a run
+    # of steps starting at a "goto"), listed in order in <output_base>.clips.json,
+    # so real crossfade/wipe/slide transitions can run between pages instead
+    # of one flat capture. Single-segment scripts get exactly one clip,
+    # already renamed to recording.webm by the capture script itself.
+    manifest_path = Path(f"{output_base}.clips.json")
+    clips: list[str] = []
+    if manifest_path.exists():
+        try:
+            clips = json.loads(manifest_path.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, OSError) as e:
+            logger.warning("Failed to read clips manifest %s: %s", manifest_path, e)
+        finally:
+            manifest_path.unlink(missing_ok=True)
+
+    if not clips:
+        # No manifest (older capture script, or the run produced nothing) -
+        # fall back to globbing for whatever .webm exists, same as before
+        # per-page clip splitting existed.
+        webms = list(Path(output_dir).glob("*.webm"))
+        if not webms:
+            return {
+                "success": False,
+                "error": "Recording produced no video file",
+                "suggestions": [
+                    "Check Playwright is installed: npx playwright install chromium",
+                    "Check the target URLs resolve in a browser",
+                ],
+            }
+        clips = [str(webms[0])]
+
+    if len(clips) > 1:
+        transition = script.get("transition_style", DEFAULT_TRANSITION)
+        stitch_result = await stitch_clips(
+            clips, output_dir, config.vfx_mcp_url, transition=transition
+        )
+        if not stitch_result["success"]:
+            return {
+                "success": False,
+                "error": stitch_result["error"],
+                "suggestions": ["Check FFmpeg is installed - required even without vfx-mcp"],
+            }
+        logger.info(
+            "Stitched %d clips (transitions=%s)", len(clips), stitch_result["used_transitions"]
+        )
+        for clip in clips:
+            if clip != stitch_result["video_path"]:
+                Path(clip).unlink(missing_ok=True)
+        output = Path(stitch_result["video_path"])
+    else:
+        output = Path(clips[0])
 
     size_kb = output.stat().st_size // 1024
     logger.info("Recording complete: %s (%d KB)", output.name, size_kb)
