@@ -196,6 +196,14 @@ async def compose(
         cmd += [
             "-pix_fmt",
             "yuv420p",
+            # Without faststart, FFmpeg writes the moov atom (container
+            # metadata, including duration) at the END of the file. Browsers'
+            # <video> elements typically can't report duration or seek until
+            # that's been read, showing "0:00" for what's actually a full-
+            # length video - this is exactly what surfaced as "success, but
+            # the video is 0 seconds" in the Depot player.
+            "-movflags",
+            "+faststart",
             str(output),
         ]
         proc = await asyncio.create_subprocess_exec(
