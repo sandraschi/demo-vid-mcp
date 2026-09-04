@@ -138,3 +138,52 @@ inherited both bugs and should be re-audited.
 coverage on 4 pages, GPU-detection prompt in `/api/llm/discover`, real streaming on
 `/api/llm/chat` (currently buffers the full response), Chat page skill-first wiring
 (`GET /api/skills` exists but isn't called by the Chat page on mount).
+
+## 2026-09-04 (continued) — two more real bugs from actually using the packaged app
+
+**All /api/ fetches were relative paths, unreachable in the packaged app.** The whole
+webapp (11 files) called `fetch("/api/...")`. In dev mode (`bun run dev`) Vite's proxy
+makes relative paths reach the backend; in the **packaged Tauri app**, the frontend is
+served from the `tauri://localhost` origin, and a relative fetch resolves against
+*that* origin (Tauri's asset protocol, no `/api/*` route) instead of
+`http://127.0.0.1:11134` - the request never left the WebView. This is why Settings/Chat
+showed "No provider detected" even though `/api/llm/discover` correctly reported both
+Ollama and LM Studio online when hit directly - the frontend never actually called it.
+`tauri.conf.json`'s CSP already whitelisted `http://127.0.0.1:11134` in `connect-src`,
+confirming this was the intended design, just never implemented. Fixed with
+`webapp/src/lib/api.ts`'s `apiUrl()` helper (absolute origin inside Tauri, relative
+otherwise) applied to every fetch call and every `<video>/<img>/<track>` `src` built
+from a backend-returned path.
+
+**Video recording failed in the packaged app**: `"Capture script not found at
+C:\Users\...\Temp\scripts\playwright-capture.js"`. Two causes: (1)
+`recorder.py` resolved the script path via `Path(__file__).resolve().parents[3]`, valid
+only for a dev-repo checkout - inside the PyInstaller-frozen backend, `__file__`
+resolves under a temp extraction dir with no `scripts/` sibling. (2)
+`scripts/playwright-capture.js` was never added to the PyInstaller spec's `datas` or to
+`tauri.conf.json`'s `bundle.resources` - the file didn't exist anywhere in the
+installed app. Fixed: bundled `resources/playwright-capture.js` (build.ps1 now copies
+it), and `recorder.py` tries three candidate locations matching the existing
+`_find_ffmpeg()` pattern, including `Path.cwd() / "resources"` (Tauri sets the
+backend's cwd to the install dir). Also added a best-effort `NODE_PATH` (via `npm root
+-g`) so `require("playwright")` can still find a **global** Playwright install from the
+installed `resources/` folder, which has no local `node_modules` ancestor to walk up to
+the way a dev checkout does.
+
+**Verified both fixes directly**, not by re-running the full pipeline blind (an earlier
+attempt at this got confused by a self-referential test - pointing `demo_vid_generate`
+at `repo="demo-vid-mcp"` triggers the tool's own auto-start logic against the
+already-running instance, causing a port collision with a symptomatically identical but
+unrelated "connection forcibly closed" error). Isolated `recorder.record()` calls
+against a trivial static test server, once with `cwd` at the repo root (dev-mode
+resolution branch) and once with `cwd` set to the real
+`%LOCALAPPDATA%\Demo Vid MCP` install directory (packaged-mode resolution branch, exact
+match for what `backend.rs::spawn_backend` sets), both produced real, playable
+`.webm` files.
+
+**Still an open architectural question, not resolved in this pass**: the packaged app's
+video recording depends on Node.js + a reachable Playwright install as an external
+prerequisite (same category as FFmpeg) - `NODE_PATH` finds a *global* npm install if one
+exists, but nothing bundles Playwright/Chromium (~300MB+) into the installer for a
+truly zero-setup experience on a machine with neither. That remains a deliberate
+packaging-size decision for whoever owns the release, not something to decide silently.
