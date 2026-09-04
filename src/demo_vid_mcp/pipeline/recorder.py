@@ -67,6 +67,18 @@ def _node_path_env() -> dict[str, str]:
     return env
 
 
+def _capture_timeout(steps: list[dict]) -> int:
+    """Playwright capture timeout, scaled to the script's own content length.
+
+    A flat 45s was fine when scripts totaled ~15s of wait time, but
+    default_script() now gives "detail" pages 6-8s each and can easily
+    produce 50s+ of narrated content - the capture genuinely needs that
+    long to run, plus browser launch and per-page navigation overhead.
+    """
+    content_seconds = sum(float(s.get("wait", 0)) for s in steps)
+    return max(45, round(content_seconds) + 60)
+
+
 async def record(script: dict, output_dir: str, theme: str = "dark") -> dict:
     """Run Playwright to capture a .webm from a narration script.
 
@@ -113,12 +125,15 @@ async def record(script: dict, output_dir: str, theme: str = "dark") -> dict:
     aspect = str(script.get("aspect_ratio", "16:9"))
     resolution = str(script.get("resolution", "720p"))
 
+    capture_timeout = _capture_timeout(steps)
+
     logger.info(
-        "Starting Playwright capture (%d steps, theme=%s, aspect=%s, res=%s)...",
+        "Starting Playwright capture (%d steps, theme=%s, aspect=%s, res=%s, timeout=%ds)...",
         len(steps),
         theme,
         aspect,
         resolution,
+        capture_timeout,
     )
     proc = await asyncio.create_subprocess_exec(
         "node",
@@ -134,14 +149,14 @@ async def record(script: dict, output_dir: str, theme: str = "dark") -> dict:
     )
 
     try:
-        _, stderr = await asyncio.wait_for(proc.communicate(), timeout=45)
+        _, stderr = await asyncio.wait_for(proc.communicate(), timeout=capture_timeout)
     except TimeoutError:
         proc.kill()
         await proc.wait()
         steps_file.unlink(missing_ok=True)
         return {
             "success": False,
-            "error": "Playwright capture timed out after 45s",
+            "error": f"Playwright capture timed out after {capture_timeout}s",
             "suggestions": [
                 "Check the target webapp loads without errors",
                 "Check Chromium can launch: npx playwright install chromium",

@@ -49,6 +49,22 @@ async def test_recorder_empty_steps(tmp_path):
     assert result["success"] is True
 
 
+def test_capture_timeout_floor():
+    """Short scripts still get at least a 60s buffer for browser launch."""
+    assert recorder._capture_timeout([{"wait": 2}, {"wait": 3}]) == 65
+    assert recorder._capture_timeout([]) >= 45
+
+
+def test_capture_timeout_scales_with_content():
+    """A long detail-heavy script (regression: this used to hit a flat 45s
+    cap and fail with 'Playwright capture timed out after 45s' even though
+    the capture was still legitimately running)."""
+    steps = [{"wait": 8}] * 6 + [{"wait": 2}]  # 50s of content, like arxiv-mcp's draft
+    timeout = recorder._capture_timeout(steps)
+    assert timeout > 45
+    assert timeout == 50 + 60
+
+
 def test_config_defaults():
     assert config.host == "127.0.0.1"
     assert isinstance(config.backend_port, int)
