@@ -114,8 +114,42 @@ async function main() {
         case "type":
           try { await page.fill(step.target, step.text || ""); } catch { /* ok */ }
           break;
-        case "end":
+        case "text_overlay":
+          await page.evaluate((text) => {
+            const prev = document.getElementById("__demo_vid_overlay");
+            if (prev) prev.remove();
+            const el = document.createElement("div");
+            el.id = "__demo_vid_overlay";
+            el.textContent = text || "";
+            Object.assign(el.style, {
+              position: "fixed",
+              inset: "0",
+              zIndex: "999998",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              textAlign: "center",
+              padding: "10%",
+              background: "rgba(9, 9, 11, 0.92)",
+              color: "#fafafa",
+              fontFamily: "system-ui, sans-serif",
+              fontSize: "clamp(24px, 4vw, 56px)",
+              fontWeight: "700",
+              lineHeight: "1.4",
+              whiteSpace: "pre-wrap",
+            });
+            document.documentElement.appendChild(el);
+          }, step.text || "");
           break;
+        case "end": {
+          // Clear any lingering overlay before the final hold/fade so the
+          // closing frame shows the real page, not a stale title card.
+          await page.evaluate(() => {
+            const prev = document.getElementById("__demo_vid_overlay");
+            if (prev) prev.remove();
+          }).catch(() => {});
+          break;
+        }
       }
       if (step.wait) await page.waitForTimeout(step.wait * 1000);
     } catch (err) {

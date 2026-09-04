@@ -40,6 +40,28 @@ def _parse_router_paths(app_tsx: Path) -> dict[str, str]:
     return routes
 
 
+def _read_webapp_table(readme: str) -> dict[str, str]:
+    """Parse a README's `## Webapp` page-purpose table into {lowercase page name: purpose}.
+
+    Matches the fleet README convention (`| Page | Purpose |` markdown table under a
+    "## Webapp" heading, e.g. `| **Dashboard** | Backend status, KPI cards... |`) so
+    auto-drafted narration can say what a page actually *does* instead of just naming
+    it. Returns {} if the repo's README has no such section - callers fall back to a
+    generic line in that case.
+    """
+    section = re.search(r"(?:^|\n)##\s*Webapp\b.*?(?=\n##\s|\Z)", readme, re.IGNORECASE | re.DOTALL)
+    if not section:
+        return {}
+    table: dict[str, str] = {}
+    for line in section.group(0).splitlines():
+        m = re.match(r"\|\s*\*{0,2}([\w /-]+?)\*{0,2}\s*\|\s*(.+?)\s*\|\s*$", line)
+        if m and not re.match(r"^-+$", m.group(1).strip()):
+            name, purpose = m.group(1).strip().lower(), m.group(2).strip()
+            if name and purpose and name != "page":
+                table[name] = purpose
+    return table
+
+
 def _find_pages(repo: str) -> list[dict]:
     """Scan a repo's webapp for page routes to generate meaningful steps.
 
@@ -87,42 +109,54 @@ def default_script(repo: str) -> dict:
     title = f"Demo of {repo}"
     steps = []
 
-    # Extract a one-liner from README
+    # Extract a one-liner from README - skip headings, images, raw HTML
+    # (badge wrappers like <p align="center">), and standalone badge/link
+    # lines that are just a wall of markdown link syntax with no prose.
     first_line = ""
     if readme:
         for line in readme.splitlines():
             line = line.strip()
-            if line and not line.startswith("#") and not line.startswith("!["):
-                first_line = line[:120]
-                break
+            if not line or line.startswith(("#", "![", "<", "[![")):
+                continue
+            if line.count("](") >= 2:  # a line that's mostly badges/links, not prose
+                continue
+            first_line = line[:160]
+            break
 
-    if first_line:
-        steps.append(
-            {
-                "action": "goto",
-                "url": "/",
-                "wait": 3,
-                "say": f"{repo}: {first_line}",
-            }
-        )
-    else:
-        steps.append(
-            {
-                "action": "goto",
-                "url": "/",
-                "wait": 2,
-                "say": f"Welcome to {repo}.",
-            }
-        )
+    # Title card first: a text_overlay held on screen before the webapp is
+    # ever shown, rather than cutting straight to clicking around. say text
+    # is the fuller intro; on-screen text is a short version of the same.
+    intro_say = f"{repo}. {first_line}" if first_line else f"Welcome to {repo}."
+    steps.append(
+        {
+            "action": "text_overlay",
+            "text": f"{repo}\n\n{first_line}" if first_line else repo,
+            "wait": 4,
+            "say": intro_say,
+        }
+    )
+    steps.append(
+        {
+            "action": "goto",
+            "url": "/",
+            "wait": 2,
+            "say": "Let's take a look.",
+        }
+    )
 
-    # Add steps for each page found in the webapp
+    # Add steps for each page found in the webapp, narrated from the
+    # README's Webapp/page-purpose table when available (what the page
+    # actually does) rather than just naming it.
+    webapp_table = _read_webapp_table(readme) if readme else {}
     for page in pages[:4]:
+        purpose = webapp_table.get(page["name"])
+        say = f"The {page['name']} page: {purpose}" if purpose else f"The {page['name']} page."
         steps.append(
             {
                 "action": "goto",
                 "url": page["path"],
-                "wait": 2,
-                "say": f"The {page['name']} page.",
+                "wait": 4 if purpose else 2,
+                "say": say,
             }
         )
 
@@ -134,8 +168,12 @@ def default_script(repo: str) -> dict:
         if tool_section:
             lines = tool_section.group(0).splitlines()
             tool_names = []
+            # Require a backtick-wrapped name specifically (`tool_name(...)`) -
+            # matching on a bare "| Word" also caught the table's own header
+            # row ("| Tool | Description |"), producing "Try Tool to get
+            # started" as the closing line.
             for line in lines:
-                m = re.match(r"[|`]\s*\*?`?(\w+)", line)
+                m = re.match(r"\|\s*`(\w+)", line)
                 if m:
                     tool_names.append(m.group(1))
             if tool_names:
