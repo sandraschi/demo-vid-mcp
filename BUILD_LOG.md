@@ -187,3 +187,49 @@ prerequisite (same category as FFmpeg) - `NODE_PATH` finds a *global* npm instal
 exists, but nothing bundles Playwright/Chromium (~300MB+) into the installer for a
 truly zero-setup experience on a machine with neither. That remains a deliberate
 packaging-size decision for whoever owns the release, not something to decide silently.
+
+## 2026-09-04 update 4 — auto-drafted videos too short, no way to steer per-page depth
+
+User feedback after watching a generated `arxiv-mcp` video: 15s total was too short, and
+the most important pages (search, depot) got the same throwaway one-liner as every other
+page - no way to tell the auto-drafter "linger here, this page matters."
+
+Root cause: `default_script()` gave every page a flat 2-4s visit regardless of
+importance, and `duration_target` was `min(len(steps) * 15, 90)` - a step-count guess
+disconnected from what was actually being narrated.
+
+Fixed:
+- `default_page_level()` classifies each page as skip/show/detail from keyword matching
+  (log/swagger/apidocs/settings -> skip; search/depot/dashboard/chat/generate -> detail),
+  overridable per-page via a new `page_config` param threaded through
+  `default_script()`, `demo_vid_script_draft`, `demo_vid_generate`, and the background
+  job queue (`enqueue()` / `_process_queue()`).
+- "detail" pages get real dwell time (6-8s) and substantive narration even when the
+  target repo's README has no `## Webapp` purpose table to pull from - previously fell
+  back to the same bare 2-3s "The X page." as everything else. (arxiv-mcp's actual
+  per-feature docs live in `docs/WEBAPP.md` with fleet-inconsistent structure, not the
+  `## Webapp` table convention `_read_webapp_table` targets - building a parser for
+  arbitrary doc formats was out of scope; the generic detail fallback covers this case
+  without depending on a specific doc file existing.)
+- `duration_target` is now `max(30, sum(step waits) + 5)` instead of a step-count guess,
+  so it reflects actual narrated content with a 30s floor.
+- New `demo_vid_list_pages` tool + `GET /api/repos/{repo}/pages` exposes each page's
+  purpose and default level for a page-selection UI.
+- Generate.tsx now shows a Skip/Show/Detail checklist per page, defaulted from the
+  backend heuristic, sending only the overrides that differ from default as
+  `page_config`.
+- Found in passing while wiring `page_config` through the queue: `enqueue()` stored
+  `aspect_ratio`/`resolution` on the job but `_process_queue()` never passed them to
+  `demo_vid_generate` - the Generate page's aspect-ratio/resolution selectors were
+  silently no-ops for anything sent to the background queue. Fixed alongside.
+
+**Verified end-to-end in the rebuilt installer**, not just via unit tests: reinstalled,
+confirmed a single healthy backend+native process pair, hit
+`GET /api/repos/arxiv-mcp/pages` directly against the packaged backend (correct
+skip/show/detail defaults for all 15 pages), then drove the actual Tauri window via
+`pywinauto` (screenshot-verified, since the packaged webview is `tauri://localhost` and
+not reachable from a normal browser) - selected arxiv-mcp on the Generate page, saw the
+checklist render with the same defaults, clicked Draft script, and confirmed the output
+JSON had `duration_target: 55` (up from the previous ~15s) with the intro `text_overlay`
+step carrying the README's actual first line, em-dash included, rendering correctly in
+the live webview.
