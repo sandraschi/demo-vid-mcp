@@ -208,6 +208,7 @@ export default function Choreography() {
       duration_target: steps.reduce((t, s) => t + (s.wait || 2), 0) + 5,
       voice: voiceName,
       title_style: options.title_card ? { type: "plain", duration: 4 } : undefined,
+      desktop_capture: options.desktop_capture ? true : undefined,
       music: options.music ? { source: "stems", track: "ambient-calm", volume: 0.3 } : undefined,
       subtitle_style: options.subtitles ? { font: "Inter", color: "#ffffff", size: 24 } : undefined,
       steps: steps.map((s) => {
