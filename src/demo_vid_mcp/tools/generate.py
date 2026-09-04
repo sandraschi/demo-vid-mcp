@@ -189,6 +189,13 @@ async def demo_vid_generate(
         str, Field(description="Aspect ratio: '16:9' (desktop) or '9:16' (mobile vertical).")
     ] = "16:9",
     resolution: Annotated[str, Field(description="Resolution preset: '720p' or '1080p'.")] = "720p",
+    page_config: Annotated[
+        dict[str, str] | None,
+        Field(
+            description="Optional {page name: 'skip'|'show'|'detail'} overrides for the "
+            "auto-drafted script (ignored if script_yaml is given). See demo_vid_list_pages."
+        ),
+    ] = None,
     ctx: Context | None = None,
 ) -> dict:
     """Generate a demo video for a fleet repo.
@@ -218,6 +225,7 @@ async def demo_vid_generate(
     await demo_vid_generate(repo="chitchat")
     await demo_vid_generate(repo="chitchat", theme="light", aspect_ratio="9:16")
     await demo_vid_generate(repo="chitchat", base_url="http://127.0.0.1:10975")
+    await demo_vid_generate(repo="arxiv-mcp", page_config={"search": "detail", "logs": "skip"})
     await demo_vid_generate(repo="blender-mcp", script_yaml=open("data/scripts/blender-chair-demo.yaml").read())
     """
     if not repo or not repo.strip():
@@ -233,7 +241,7 @@ async def demo_vid_generate(
             return {"success": False, "error": validated["error"]}
         script = validated["script"]
     else:
-        script = default_script(repo)
+        script = default_script(repo, page_config)
 
     if aspect_ratio:
         script["aspect_ratio"] = aspect_ratio

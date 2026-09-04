@@ -43,6 +43,7 @@ _START_TIME = time.monotonic()
 _TOOL_NAMES = [
     "demo_vid_generate",
     "demo_vid_script_draft",
+    "demo_vid_list_pages",
     "demo_vid_script_validate",
     "demo_vid_list",
     "demo_vid_refine",
@@ -147,7 +148,9 @@ async def api_generate(body: dict):
     if not repo:
         return {"success": False, "error": "repo required"}
 
-    result = await demo_vid_generate(repo=repo, script_yaml=body.get("script_yaml"))
+    result = await demo_vid_generate(
+        repo=repo, script_yaml=body.get("script_yaml"), page_config=body.get("page_config")
+    )
     return result
 
 
@@ -160,8 +163,18 @@ async def api_script_draft(body: dict):
     repo = body.get("repo", "")
     if not repo:
         return {"success": False, "error": "repo required"}
-    script = default_script(repo)
+    script = default_script(repo, body.get("page_config"))
     return {"success": True, "script": script, "message": f"Drafted script for {repo}"}
+
+
+@app.get("/api/repos/{repo}/pages")
+async def api_repo_pages(repo: str):
+    """List a repo's webapp pages with purpose + default detail level (page-selection checklist)."""
+
+    from demo_vid_mcp.pipeline.script import list_pages_with_defaults
+
+    pages = list_pages_with_defaults(repo)
+    return {"success": True, "pages": pages, "message": f"{len(pages)} pages found for {repo}"}
 
 
 @app.get("/api/repos")
@@ -357,6 +370,7 @@ async def queue_enqueue(body: dict):
         script_yaml=body.get("script_yaml"),
         aspect_ratio=body.get("aspect_ratio", "16:9"),
         resolution=body.get("resolution", "720p"),
+        page_config=body.get("page_config"),
     )
     return {"success": True, "job": job}
 

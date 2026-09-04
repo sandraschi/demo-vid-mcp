@@ -62,6 +62,43 @@ def _read_webapp_table(readme: str) -> dict[str, str]:
     return table
 
 
+# Keyword heuristics for a page's default detail level when the caller
+# doesn't specify one explicitly. "skip" = leave out of the tour entirely
+# (low visual/narrative value); "detail" = worth lingering on and narrating
+# more fully; everything else defaults to "show" (a normal brief visit).
+_SKIP_KEYWORDS = ("log", "swagger", "apidocs", "api docs", "help", "setting")
+_DETAIL_KEYWORDS = ("search", "depot", "dashboard", "chat", "generate")
+
+
+def default_page_level(name: str) -> str:
+    """Heuristic default detail level ("skip" | "show" | "detail") for a page name."""
+    lower = name.lower()
+    if any(k in lower for k in _SKIP_KEYWORDS):
+        return "skip"
+    if any(k in lower for k in _DETAIL_KEYWORDS):
+        return "detail"
+    return "show"
+
+
+def list_pages_with_defaults(repo: str) -> list[dict]:
+    """Pages for a repo, each with its README-sourced purpose (if any) and a
+    default detail level, for the Generate page's page-selection checklist.
+    """
+    readme = _read_repo_readme(repo)
+    webapp_table = _read_webapp_table(readme) if readme else {}
+    result = []
+    for page in _find_pages(repo):
+        result.append(
+            {
+                "name": page["name"],
+                "path": page["path"],
+                "purpose": webapp_table.get(page["name"]),
+                "level": default_page_level(page["name"]),
+            }
+        )
+    return result
+
+
 def _find_pages(repo: str) -> list[dict]:
     """Scan a repo's webapp for page routes to generate meaningful steps.
 
@@ -95,13 +132,17 @@ steps:
 """
 
 
-def default_script(repo: str) -> dict:
+def default_script(repo: str, page_config: dict[str, str] | None = None) -> dict:
     """Generate a default narration script by reading the repo's README.
 
-    Falls back to a generic placeholder if the repo is not found locally.
+    page_config optionally maps {page name: "skip"|"show"|"detail"}, overriding
+    default_page_level()'s keyword-based guess per page (see the Generate page's
+    page-selection checklist). Falls back to a generic placeholder if the repo is
+    not found locally.
     """
     readme = _read_repo_readme(repo)
     pages = _find_pages(repo)
+    page_config = page_config or {}
 
     if not readme and not pages:
         return yaml.safe_load(_PLACEHOLDER_SCRIPT.format(repo=repo))
@@ -146,16 +187,40 @@ def default_script(repo: str) -> dict:
 
     # Add steps for each page found in the webapp, narrated from the
     # README's Webapp/page-purpose table when available (what the page
-    # actually does) rather than just naming it.
+    # actually does) rather than just naming it. Detail level - "skip"
+    # (leave out), "show" (brief visit), "detail" (linger + fuller
+    # narration) - comes from page_config if the caller specified one for
+    # this page, else a keyword-based default (see default_page_level()).
     webapp_table = _read_webapp_table(readme) if readme else {}
-    for page in pages[:4]:
+    for page in pages:
+        level = page_config.get(page["name"], default_page_level(page["name"]))
+        if level == "skip":
+            continue
         purpose = webapp_table.get(page["name"])
-        say = f"The {page['name']} page: {purpose}" if purpose else f"The {page['name']} page."
+        if level == "detail" and purpose:
+            say = f"The {page['name']} page. {purpose}. Here's what you can do here."
+            wait = 8
+        elif purpose:
+            say = f"The {page['name']} page: {purpose}"
+            wait = 4
+        elif level == "detail":
+            # No README purpose table entry, but this page still earned "detail"
+            # from the keyword heuristic (default_page_level) - give it real
+            # dwell time and a line that frames it as worth exploring instead of
+            # falling back to the same bare "The X page." as a skipped-over "show".
+            say = (
+                f"The {page['name']} page. This is one of the most useful parts "
+                f"of {repo} - take a moment to see what's here."
+            )
+            wait = 6
+        else:
+            say = f"The {page['name']} page."
+            wait = 2
         steps.append(
             {
                 "action": "goto",
                 "url": page["path"],
-                "wait": 4 if purpose else 2,
+                "wait": wait,
                 "say": say,
             }
         )
@@ -180,19 +245,31 @@ def default_script(repo: str) -> dict:
                 steps.append(
                     {
                         "action": "end",
+                        "wait": 2,
                         "say": f"{len(tool_names)} tools available. Try {tool_names[0]} to get started.",
                     }
                 )
             else:
-                steps.append({"action": "end", "say": f"{repo}. Open source. One command install."})
+                steps.append(
+                    {
+                        "action": "end",
+                        "wait": 2,
+                        "say": f"{repo}. Open source. One command install.",
+                    }
+                )
         else:
-            steps.append({"action": "end", "say": f"{repo}. Open source. One command install."})
+            steps.append(
+                {"action": "end", "wait": 2, "say": f"{repo}. Open source. One command install."}
+            )
     else:
-        steps.append({"action": "end", "say": f"{repo}. Open source. One command install."})
+        steps.append(
+            {"action": "end", "wait": 2, "say": f"{repo}. Open source. One command install."}
+        )
 
+    content_seconds = sum(float(s.get("wait", 0)) for s in steps)
     return {
         "title": title,
-        "duration_target": min(len(steps) * 15, 90),
+        "duration_target": max(30, round(content_seconds) + 5),
         "voice": "heart",
         "aspect_ratio": "16:9",
         "resolution": "720p",

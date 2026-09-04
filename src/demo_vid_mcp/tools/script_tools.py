@@ -6,13 +6,20 @@ from typing import Annotated
 
 from pydantic import Field
 
-from demo_vid_mcp.pipeline.script import default_script, validate_script
+from demo_vid_mcp.pipeline.script import default_script, list_pages_with_defaults, validate_script
 from demo_vid_mcp.server import mcp
 
 
 @mcp.tool()
 async def demo_vid_script_draft(
     repo: Annotated[str, Field(description="Repository name to draft a script for.")],
+    page_config: Annotated[
+        dict[str, str] | None,
+        Field(
+            description="Optional {page name: 'skip'|'show'|'detail'} overrides. "
+            "See demo_vid_list_pages for a repo's pages and default levels."
+        ),
+    ] = None,
 ) -> dict:
     """Draft a default narration script for a repo.
 
@@ -23,12 +30,38 @@ async def demo_vid_script_draft(
 
     ## Examples
     await demo_vid_script_draft(repo="chitchat")
+    await demo_vid_script_draft(repo="arxiv-mcp", page_config={"search": "detail", "logs": "skip"})
     """
-    script = default_script(repo)
+    script = default_script(repo, page_config)
     return {
         "success": True,
         "script": script,
         "message": "Default script - edit steps and re-run with demo_vid_generate",
+    }
+
+
+@mcp.tool(name="demo_vid_list_pages")
+async def demo_vid_list_pages(
+    repo: Annotated[str, Field(description="Repository name to list webapp pages for.")],
+) -> dict:
+    """List a repo's webapp pages with their README-sourced purpose and default detail level.
+
+    For building a page-selection checklist before drafting a script: each page comes
+    back with a default level ("skip" | "show" | "detail") from keyword heuristics,
+    which the caller can override via demo_vid_script_draft's/demo_vid_generate's
+    page_config parameter.
+
+    ## Return Format
+    {"success": bool, "pages": [{"name": str, "path": str, "purpose": str | None, "level": str}], "message": str}
+
+    ## Examples
+    await demo_vid_list_pages(repo="arxiv-mcp")
+    """
+    pages = list_pages_with_defaults(repo)
+    return {
+        "success": True,
+        "pages": pages,
+        "message": f"{len(pages)} pages found for {repo}",
     }
 
 

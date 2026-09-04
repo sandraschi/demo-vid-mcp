@@ -46,6 +46,7 @@ class JobQueue:
         script_yaml: str | None = None,
         aspect_ratio: str = "16:9",
         resolution: str = "720p",
+        page_config: dict[str, str] | None = None,
     ) -> dict[str, Any]:
         """Add a video generation job to the persistent queue."""
         job_id = f"job-{uuid.uuid4().hex[:8]}"
@@ -55,6 +56,7 @@ class JobQueue:
             "script_yaml": script_yaml,
             "aspect_ratio": aspect_ratio,
             "resolution": resolution,
+            "page_config": page_config,
             "status": "pending",
             "created_at": int(time.time()),
             "started_at": None,
@@ -120,6 +122,9 @@ class JobQueue:
                     result = await demo_vid_generate(
                         repo=job["repo"],
                         script_yaml=job.get("script_yaml"),
+                        aspect_ratio=job.get("aspect_ratio", "16:9"),
+                        resolution=job.get("resolution", "720p"),
+                        page_config=job.get("page_config"),
                     )
                     job["result"] = result
                     if result.get("success"):
