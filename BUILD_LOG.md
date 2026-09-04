@@ -233,3 +233,45 @@ checklist render with the same defaults, clicked Draft script, and confirmed the
 JSON had `duration_target: 55` (up from the previous ~15s) with the intro `text_overlay`
 step carrying the README's actual first line, em-dash included, rendering correctly in
 the live webview.
+
+## 2026-09-04 update 5 — capture timeout regression + .env never actually loaded
+
+Two more bugs surfaced from real usage after update 4 shipped.
+
+**Bug 1: `recorder.py`'s capture subprocess had a flat 45s timeout.** Fine when scripts
+totaled ~15s of wait time; once detail-level pages started producing 50s+ of narrated
+content, a genuinely-still-running capture got killed and reported as `"Playwright
+capture timed out after 45s"` - the very first real generation attempt after update 4.
+`_capture_timeout()` now scales with the script's own content
+(`sum(wait times) + 60s` buffer for browser launch/navigation), extracted as a small
+pure function (`recorder.py`) with direct unit tests instead of computed inline.
+
+Verified with a real, non-mocked capture: 54.5s elapsed against arxiv-mcp (would have
+hit the old 45s cap and failed exactly as reported), producing a genuine 3.7MB `.webm`.
+
+**Bug 2: `.env` was never actually loaded, anywhere, ever.** Every fleet-service URL
+(`SPEECH_MCP_URL` etc.) is read via `os.getenv()` in `config.py`, and the app's own
+error message says `"Set SPEECH_MCP_URL in .env"` - but nothing in the codebase called
+`load_dotenv()`. The dev repo's `.env` had `SPEECH_MCP_URL` correctly set the entire
+time; it was simply never read, so voiceover always failed with `"speech-mcp not
+configured"` even with speech-mcp healthy and running on port 10909. Compounding this,
+the packaged app's `resources/` only ever got `.env.example` copied into it, never a
+real `.env` - so even with the loading bug fixed, a fresh install would have found
+nothing to load.
+
+Fixed both: `_load_env_file()` in `config.py` calls `load_dotenv()` against the first
+existing candidate (dev repo root, then `Path.cwd()` - Tauri's cwd is the install dir -
+then `cwd/resources`), called before `class Config` so it runs ahead of the dataclass
+field defaults being evaluated (those run once at import time). `build.ps1` now also
+seeds `resources/.env` from `.env.example` on build, but only if one doesn't already
+exist there, so a customized `.env` from a prior install is never clobbered on upgrade -
+same non-clobber pattern as the `.mcpbignore` fix in `mcp-central-docs`. Added
+`resources/.env` to `tauri.conf.json`'s bundle list so it actually ships.
+
+**Verified end-to-end in the rebuilt, reinstalled packaged app**: ran a real generation
+via the exact `POST /api/generate` call the Generate page's button makes.
+`stages.voiceover` came back `{"success": true, "message": "Voiceover generated: 14
+segments"}` (previously `"speech-mcp not configured"` on every attempt), and the final
+`.mp4` in the app's own `data/videos/arxiv-mcp/` carries a real AAC audio stream
+alongside the h264 video (`ffprobe` confirmed both), running 66.3s with full narration -
+not a silent video with subtitles as a fallback, an actually-spoken one.
