@@ -29,7 +29,8 @@
         "icon": ["icons/icon.png", "icons/icon.ico"],
         "resources": [
             "resources/demo-vid-mcp-backend.exe",
-            "resources/.env.example"],
+            "resources/.env.example",
+            "resources/playwright-capture.js"],
         "windows": {
             "webviewInstallMode": {
                 "type": "skip"

@@ -69,6 +69,9 @@ Write-Host "  Backend exe: $((Get-Item $src).Length / 1MB) MB" -ForegroundColor 
 if (Test-Path "$Root\.env.example") {
     Copy-Item "$Root\.env.example" "$ResourceDir\.env.example" -Force
 }
+if (Test-Path "$Root\scripts\playwright-capture.js") {
+    Copy-Item "$Root\scripts\playwright-capture.js" "$ResourceDir\playwright-capture.js" -Force
+}
 
 # Step 4: Single NSIS installer
 Write-Host "-> [4/4] Tauri NSIS bundle..." -ForegroundColor Yellow

@@ -5,10 +5,66 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import os
 import subprocess
+import sys
 from pathlib import Path
 
 logger = logging.getLogger("demo-vid-mcp.recorder")
+
+
+def _find_capture_script() -> Path | None:
+    """Locate playwright-capture.js in dev (repo checkout) or packaged mode.
+
+    `Path(__file__).resolve().parents[3]` only makes sense for a real
+    source-tree layout; inside a PyInstaller-frozen backend.exe, __file__
+    resolves somewhere under a temp extraction dir with no "scripts/"
+    sibling, so that alone always fails once installed. When Tauri spawns
+    the backend it sets cwd to the install directory (see backend.rs
+    spawn_backend), so a bundled resources/playwright-capture.js is
+    reachable via Path.cwd() there - same pattern as _find_ffmpeg().
+    """
+    candidates = [
+        Path(__file__).resolve().parents[3] / "scripts" / "playwright-capture.js",
+        Path.cwd() / "resources" / "playwright-capture.js",
+        Path(sys.executable).resolve().parent / "resources" / "playwright-capture.js",
+    ]
+    for c in candidates:
+        if c.exists():
+            return c
+    return None
+
+
+def _node_path_env() -> dict[str, str]:
+    """Extra NODE_PATH entries so `require("playwright")` resolves even when
+    playwright-capture.js runs from resources/ (no local node_modules
+    ancestor to walk up to - the packaged app's install dir isn't nested
+    under the dev repo). Covers a global `npm install -g playwright` if one
+    exists; does not bundle Playwright/Chromium into the installer itself
+    (~300MB+) - that remains a separate, deliberate packaging decision.
+    """
+    env = os.environ.copy()
+    extra = []
+    try:
+        result = subprocess.run(
+            ["npm", "root", "-g"],
+            capture_output=True,
+            text=True,
+            timeout=5,
+            shell=True,
+        )
+        if result.returncode == 0:
+            global_root = result.stdout.strip()
+            if global_root and Path(global_root).exists():
+                extra.append(global_root)
+    except Exception:
+        pass
+    if extra:
+        existing = env.get("NODE_PATH", "")
+        env["NODE_PATH"] = (
+            os.pathsep.join([*extra, existing]) if existing else os.pathsep.join(extra)
+        )
+    return env
 
 
 async def record(script: dict, output_dir: str, theme: str = "dark") -> dict:
@@ -34,10 +90,17 @@ async def record(script: dict, output_dir: str, theme: str = "dark") -> dict:
     if not steps:
         return {"success": True, "video_path": None, "message": "No steps - nothing to record"}
 
-    script_dir = Path(__file__).resolve().parents[3] / "scripts"
-    capture_js = script_dir / "playwright-capture.js"
-    if not capture_js.exists():
-        return {"success": False, "error": f"Capture script not found at {capture_js}"}
+    capture_js = _find_capture_script()
+    if capture_js is None:
+        return {
+            "success": False,
+            "error": "Capture script (playwright-capture.js) not found",
+            "suggestions": [
+                "Dev checkout: confirm scripts/playwright-capture.js exists at the repo root",
+                "Packaged app: confirm the installed resources/ directory contains "
+                "playwright-capture.js (reinstall if missing)",
+            ],
+        }
 
     # Fresh output directory - delete stale files from prior runs
     for old in Path(output_dir).glob("*.webm"):
@@ -67,6 +130,7 @@ async def record(script: dict, output_dir: str, theme: str = "dark") -> dict:
         resolution,
         stdout=subprocess.DEVNULL,
         stderr=subprocess.PIPE,
+        env=_node_path_env(),
     )
 
     try:
