@@ -132,10 +132,46 @@ async def extract_poster(video_path: Path, output_dir: Path) -> Path | None:
     return None
 
 
+def _build_audio_graph(
+    voice_idx: int | None, music_idx: int | None
+) -> tuple[str | None, str | None]:
+    """Build the -filter_complex audio graph and its output pad name.
+
+    Four cases:
+    - neither: (None, None) - caller adds -an
+    - voice only: (None, "{voice_idx}:a") - no filtering needed, map directly
+    - music only: fixed-volume mix, no ducking (nothing to duck against)
+    - both: music ducked under voice via sidechaincompress, then mixed in
+      - the "voiceover ducking" this pipeline's release notes always claimed
+        but never actually implemented until now.
+    """
+    if voice_idx is None and music_idx is None:
+        return None, None
+    if voice_idx is not None and music_idx is None:
+        return None, f"{voice_idx}:a"
+    if voice_idx is None and music_idx is not None:
+        return f"[{music_idx}:a]volume=0.35[aout]", "[aout]"
+    graph = (
+        f"[{music_idx}:a]volume=0.5[music_pre];"
+        f"[music_pre][{voice_idx}:a]sidechaincompress="
+        "threshold=0.05:ratio=8:attack=5:release=400[music_ducked];"
+        f"[{voice_idx}:a][music_ducked]amix=inputs=2:duration=first:weights=1.0 0.8[aout]"
+    )
+    return graph, "[aout]"
+
+
 async def compose(
-    script: dict, video_path: str | None, audio_path: str | None, output_dir: str
+    script: dict,
+    video_path: str | None,
+    audio_path: str | None,
+    output_dir: str,
+    music_path: str | None = None,
 ) -> dict:
-    """Compose final .mp4 from recording + optional voiceover + title card.
+    """Compose final .mp4 from recording + optional voiceover + music + title card.
+
+    music_path is mixed under the voiceover with sidechain ducking (music
+    volume drops while narration is speaking) when both are present; at a
+    fixed low volume with no ducking when there's music but no voiceover.
 
     ## Return Format
     {"success": bool, "mp4_path": str | None, "poster_path": str | None, "vtt_path": str | None, "srt_path": str | None, "message": str}
@@ -163,12 +199,24 @@ async def compose(
         }
 
     audio_file = Path(audio_path) if audio_path and Path(audio_path).exists() else None
+    music_file = Path(music_path) if music_path and Path(music_path).exists() else None
 
     try:
         safe_title = title.replace("\\", r"\\").replace("'", r"\'").replace(":", r"\:")
         cmd = [_FFMPEG_PATH, "-y", "-i", str(video_path)]
+
+        next_input = 1
+        voice_idx = None
+        music_idx = None
         if audio_file:
             cmd += ["-i", str(audio_file)]
+            voice_idx = next_input
+            next_input += 1
+        if music_file:
+            cmd += ["-i", str(music_file)]
+            music_idx = next_input
+            next_input += 1
+
         cmd += [
             "-c:v",
             "libx264",
@@ -189,8 +237,13 @@ async def compose(
             cmd += ["-vf", drawtext]
         else:
             logger.warning("No usable font found for drawtext - composing without a title overlay")
-        if audio_file:
-            cmd += ["-c:a", "aac", "-b:a", "128k"]
+
+        audio_graph, audio_map = _build_audio_graph(voice_idx, music_idx)
+        if audio_graph:
+            cmd += ["-filter_complex", audio_graph]
+        cmd += ["-map", "0:v"]
+        if audio_map:
+            cmd += ["-map", audio_map, "-c:a", "aac", "-b:a", "128k"]
         else:
             cmd += ["-an"]
         cmd += [
