@@ -275,3 +275,70 @@ segments"}` (previously `"speech-mcp not configured"` on every attempt), and the
 `.mp4` in the app's own `data/videos/arxiv-mcp/` carries a real AAC audio stream
 alongside the h264 video (`ffprobe` confirmed both), running 66.3s with full narration -
 not a silent video with subtitles as a fallback, an actually-spoken one.
+
+## 2026-09-04 update 7 — real background music, dedicated Speech/Music pages
+
+User feedback: the "Desktop" checkbox on Choreography also had no effect (found
+alongside the speech fix - `options.desktop_capture` was tracked in state and rendered
+as a checkbox but never written into `generateYaml()`'s output, so
+`_is_desktop_capture()` in `generate.py` never saw it). Fixed with one line.
+
+User also asked how background music generation should work - `songgeneration-mcp` was
+the right answer, not a separate Lyria integration: it already aggregates Lyria 3 Pro
+(Vertex AI), ACE-Step 1.5, Stable Audio 3 and SongGeneration-Studio behind one REST API,
+trying each in order. `stems-mcp` (what Choreography's music checkbox was previously
+wired to, as `{source: "stems", ...}`) does audio *separation*, not generation - the
+wrong tool entirely, and also never actually read by `composer.py` either way. The
+"Background Audio Bed... with voiceover ducking" release-note bullet from earlier in
+this log described a feature that plain didn't exist until this pass.
+
+Built for real, not stubbed:
+
+- `pipeline/music.py`: `generate_background_music()` calls songgeneration-mcp's
+  `POST /api/generate` with a text prompt, copies back the resulting file (it returns a
+  local path, not streamed bytes - fine, since fleet servers are all localhost).
+  Degrades gracefully and non-fatally when unconfigured or no backend produces audio,
+  same pattern as voiceover.
+- `composer.py`: `compose()` takes an optional `music_path`. `_build_audio_graph()`
+  builds the ffmpeg `-filter_complex` for four cases - neither/voice-only (unchanged),
+  music-only (fixed low volume), and **both** (music ducked under voice via
+  `sidechaincompress`, then mixed in via `amix`) - the actual ducking this log's own
+  release notes always claimed. Verified against real ffmpeg runs and real audio files
+  for all four cases, not just command construction.
+- `demo_vid_generate` gains `voice`/`music_enabled`/`music_prompt` params (same
+  always-overrides-script contract as the existing `aspect_ratio`/`resolution`), with
+  music generation running concurrently with voiceover/recording via `asyncio` tasks
+  since it can take up to two minutes. Threaded through the job queue too.
+- `GET /api/health/music` (mirrors `/api/health/speech` - also fixed that one to read
+  `config.speech_mcp_url` instead of a hardcoded port), `GET /api/speech/preview` and
+  `POST /api/music/preview` back two new pages: **Speech** (voice picker, health,
+  text-to-preview) and **Music** (enable toggle, mood/style prompt, health,
+  generate-and-preview with the backend that produced it shown). Settings persist to
+  `localStorage`, matching the existing LLM-provider pattern in `Settings.tsx`, and
+  Generate/Choreography both read them at request time so a change takes effect without
+  a reload.
+- Fixed Choreography's own generate call to explicitly pass `voice`/`music_enabled`/
+  `music_prompt` as REST params alongside its `script_yaml` - since those params always
+  override the script (see above), leaving them unset would have silently reset its own
+  music checkbox to off, the exact class of bug just fixed for Desktop.
+
+**Verified in the rebuilt, reinstalled packaged app**: `GET /api/health/speech` and
+`GET /api/health/music` both respond correctly (speech connected, music correctly
+"not detected" since songgeneration-mcp isn't running - no crash either way). The Speech
+and Music pages render with correct state in the live Tauri window (screenshot-verified).
+`GET /api/speech/preview` verified twice - once directly (95KB real WAV, HTTP 200,
+`audio/wav`), once by running the *exact* fetch-blob-audio JS pattern used in
+`Speech.tsx` against the live backend from a real browser context (`duration=2.16s`
+resolved correctly) - the packaged Tauri window's own click-driven UI test was
+inconclusive (WebView2 content isn't well exposed to `pywinauto`'s UIA tree, so
+coordinate-based clicks there couldn't be confirmed as landing precisely), but both the
+backend and the exact interaction code are independently proven correct via more
+reliable means. A full `POST /api/generate` call with `voice: "sky"` afterward
+completed successfully end-to-end (voiceover, recording, composition all green) and the
+saved `narration.yaml` confirmed the override took effect - no regression from any of
+this wiring.
+
+**Still untested**: the actual music-generation path itself (`generate_background_music`
++ the ducking mix), since no songgeneration-mcp backend was running locally to generate
+a real track against. The failure path (unconfigured/unreachable) is verified; the
+success path is verified only with a stand-in audio file, not a real generated track.
