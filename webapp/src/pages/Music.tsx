@@ -66,7 +66,7 @@ export default function Music() {
       const blobUrl = URL.createObjectURL(blob);
       if (audioRef.current) {
         audioRef.current.src = blobUrl;
-        audioRef.current.play().catch(() => {});
+        audioRef.current.play().catch((e) => setPreviewError(`Playback blocked: ${e}`));
       }
     } catch (e) {
       setPreviewError(String(e));
@@ -154,7 +154,12 @@ export default function Music() {
             <Play className="h-4 w-4" />
             {previewing ? "Generating..." : "Generate & Preview"}
           </button>
-          <audio ref={audioRef} controls className="h-9" />
+          <audio
+            ref={audioRef}
+            controls
+            className="h-9"
+            onError={() => setPreviewError("Audio failed to load (blocked or unsupported)")}
+          />
           {previewBackend && <span className="text-xs text-zinc-500">via {previewBackend}</span>}
         </div>
         {previewError && <p className="text-xs text-red-400 mt-2">{previewError}</p>}

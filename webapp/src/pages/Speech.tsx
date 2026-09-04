@@ -55,7 +55,7 @@ export default function Speech() {
       const blobUrl = URL.createObjectURL(blob);
       if (audioRef.current) {
         audioRef.current.src = blobUrl;
-        audioRef.current.play().catch(() => {});
+        audioRef.current.play().catch((e) => setPreviewError(`Playback blocked: ${e}`));
       }
     } catch (e) {
       setPreviewError(String(e));
@@ -143,7 +143,12 @@ export default function Speech() {
             <Play className="h-4 w-4" />
             {previewing ? "Generating..." : `Preview as ${voice}`}
           </button>
-          <audio ref={audioRef} controls className="h-9" />
+          <audio
+            ref={audioRef}
+            controls
+            className="h-9"
+            onError={() => setPreviewError("Audio failed to load (blocked or unsupported)")}
+          />
         </div>
         {previewError && <p className="text-xs text-red-400 mt-2">{previewError}</p>}
       </div>
