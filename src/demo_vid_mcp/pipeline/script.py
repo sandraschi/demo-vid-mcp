@@ -1,6 +1,7 @@
 """Script parsing, validation, and README-aware default generation."""
 
 import re
+from pathlib import Path
 
 import yaml
 
@@ -15,16 +16,47 @@ def _read_repo_readme(repo: str) -> str | None:
     return None
 
 
+def _parse_router_paths(app_tsx: Path) -> dict[str, str]:
+    """Parse `<Route path="X" element={<Component` declarations from a react-router
+    App.tsx into {ComponentName: "/x"}.
+
+    Component filenames don't reliably predict real route paths - e.g. arxiv-mcp's
+    ApiDocsPage.tsx is mounted at /swagger, not /apidocs. Guessing the path from the
+    filename (lowercased, "Page" suffix stripped) produced 404s for any repo whose
+    routes don't happen to match that convention. Returns {} for SPAs with no
+    react-router routes at all (e.g. demo-vid-mcp's own App.tsx, which is a single page
+    with in-memory nav state) - callers should fall back to "/" in that case, since
+    there's nothing else to goto.
+    """
+    if not app_tsx.exists():
+        return {}
+    text = app_tsx.read_text(encoding="utf-8", errors="ignore")
+    routes: dict[str, str] = {}
+    for m in re.finditer(r'<Route\s+(?:index\s+)?path="([^"]*)"\s+element=\{<(\w+)', text):
+        path, component = m.group(1), m.group(2)
+        if path in ("", "*"):
+            continue
+        routes[component] = path if path.startswith("/") else f"/{path}"
+    return routes
+
+
 def _find_pages(repo: str) -> list[dict]:
-    """Scan a repo's webapp for page routes to generate meaningful steps."""
+    """Scan a repo's webapp for page routes to generate meaningful steps.
+
+    Prefers the real route table parsed from App.tsx; falls back to a
+    lowercased-filename guess only for a page whose component isn't found in that
+    table at all (e.g. the router file couldn't be parsed for some reason).
+    """
     webapp_dirs = ["web_sota/src/pages", "webapp/src/pages", "frontend/src/pages"]
     pages = []
     for rel in webapp_dirs:
         pages_dir = config.repos_root / repo / rel
         if pages_dir.exists():
+            router_paths = _parse_router_paths(pages_dir.parent / "App.tsx")
             for f in sorted(pages_dir.glob("*.tsx")):
                 name = f.stem.replace("Page", "").lower()
-                pages.append({"file": f.stem, "name": name, "path": f"/{name.lower()}"})
+                path = router_paths.get(f.stem) or f"/{name}"
+                pages.append({"file": f.stem, "name": name, "path": path})
     return pages
 
 
