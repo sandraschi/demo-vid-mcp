@@ -1,5 +1,6 @@
 import { Bot, Download, Eraser, Send, Sparkles, User } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { apiUrl } from "../lib/api";
 
 const STORAGE_KEY = "demo-vid-mcp-chat-history";
 const PERSONALITY_KEY = "demo-vid-mcp-chat-personality";
@@ -79,7 +80,7 @@ export default function ChatPage() {
 
   // Provider health check — via backend proxy (not direct browser fetch, CORS)
   useEffect(() => {
-    fetch("/api/llm/discover", { signal: AbortSignal.timeout(3000) })
+    fetch(apiUrl("/api/llm/discover"), { signal: AbortSignal.timeout(3000) })
       .then((r) => r.json())
       .then((d) => {
         const provs = d.providers || [];
@@ -109,7 +110,7 @@ export default function ChatPage() {
         (m) => ({ role: m.role, content: m.content }),
       );
 
-      const r = await fetch("/api/llm/chat", {
+      const r = await fetch(apiUrl("/api/llm/chat"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ provider, model, messages: mcpMessages }),

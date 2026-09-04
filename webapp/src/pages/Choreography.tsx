@@ -16,6 +16,7 @@ import {
   Wand2,
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { apiUrl } from "../lib/api";
 
 type StepType =
   | "goto"
@@ -188,7 +189,7 @@ export default function Choreography() {
   const [categorizedRepos, setCategorizedRepos] = useState<Record<string, string[]>>({});
 
   useEffect(() => {
-    fetch("/api/repos")
+    fetch(apiUrl("/api/repos"))
       .then((r) => r.json())
       .then((d) => {
         const m: Record<string, string[]> = {};
@@ -240,7 +241,7 @@ export default function Choreography() {
     const yaml_str = generateYaml();
     const body = { repo, script_yaml: JSON.stringify(yaml_str) };
     try {
-      const r = await fetch("/api/generate", {
+      const r = await fetch(apiUrl("/api/generate"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),

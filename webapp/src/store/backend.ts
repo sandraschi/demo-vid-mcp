@@ -1,8 +1,9 @@
 import { create } from "zustand";
+import { apiUrl } from "../lib/api";
 
 const BACKOFF_MS = [1000, 2000, 4000, 8000, 16000];
 const STEADY_MS = 10000;
-const HEALTH_URL = "/api/health";
+const HEALTH_URL = apiUrl("/api/health");
 
 interface BackendState {
   backendOk: boolean | null;

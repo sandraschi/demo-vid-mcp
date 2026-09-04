@@ -1,5 +1,6 @@
 import { Loader, RefreshCw, Settings as SettingsIcon, Wifi, WifiOff } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { apiUrl } from "../lib/api";
 
 interface Provider {
   name: string;
@@ -23,10 +24,10 @@ export default function SettingsPage() {
     setProbing(true);
     try {
       const [h, d] = await Promise.all([
-        fetch("/api/health")
+        fetch(apiUrl("/api/health"))
           .then((r) => r.json())
           .catch(() => ({})),
-        fetch("/api/llm/discover")
+        fetch(apiUrl("/api/llm/discover"))
           .then((r) => r.json())
           .catch(() => ({ providers: [] })),
       ]);

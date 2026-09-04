@@ -1,17 +1,20 @@
-const API_BASE = "http://127.0.0.1:11134";
+// The packaged Tauri app serves the webapp from the `tauri://localhost`
+// origin, not from the backend's own http://127.0.0.1:11134 - a relative
+// fetch("/api/...") resolves against tauri://localhost (Tauri's asset
+// protocol, which 404s on API paths) instead of reaching the backend. In
+// dev mode (`bun run dev`), Vite's proxy makes relative paths work, which
+// is why this went unnoticed until testing the actual packaged installer.
+// tauri.conf.json's CSP already whitelists http://127.0.0.1:11134 in
+// connect-src for exactly this reason.
+const TAURI_BACKEND_ORIGIN = "http://127.0.0.1:11134";
 
-export async function apiGet(path: string) {
-  const r = await fetch(`${API_BASE}${path}`);
-  if (!r.ok) throw new Error(`HTTP ${r.status}`);
-  return r.json();
+function isTauriRuntime(): boolean {
+  return typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
 }
 
-export async function apiPost(path: string, body: unknown) {
-  const r = await fetch(`${API_BASE}${path}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-  if (!r.ok) throw new Error(`HTTP ${r.status}`);
-  return r.json();
+export const API_BASE = isTauriRuntime() ? TAURI_BACKEND_ORIGIN : "";
+
+/** Prefix an "/api/..." (or "/videos/...", "/mcp/...") path with the backend origin when running inside Tauri; relative otherwise (dev server proxy). */
+export function apiUrl(path: string): string {
+  return `${API_BASE}${path}`;
 }
