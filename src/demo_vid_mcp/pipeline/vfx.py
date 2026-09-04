@@ -30,6 +30,29 @@ def _tool_data(result) -> dict:
 async def _vfx_transition(
     input_a: str, input_b: str, output_path: str, transition: str, duration: int, vfx_mcp_url: str
 ) -> dict:
+    """One transition call, retried once after a short delay.
+
+    Observed intermittently failing on the very first clip of a freshly-
+    recorded set (works reliably on clips that have existed for a moment)
+    - looks like a transient file-handle race between Playwright finishing
+    a page's video encode and vfx-mcp's ffmpeg trying to read that same
+    file moments later, not a real/reproducible command error. A short
+    retry absorbs that without needing to chase the exact OS-level cause.
+    """
+    result = await _vfx_transition_once(
+        input_a, input_b, output_path, transition, duration, vfx_mcp_url
+    )
+    if result["success"]:
+        return result
+    await asyncio.sleep(1)
+    return await _vfx_transition_once(
+        input_a, input_b, output_path, transition, duration, vfx_mcp_url
+    )
+
+
+async def _vfx_transition_once(
+    input_a: str, input_b: str, output_path: str, transition: str, duration: int, vfx_mcp_url: str
+) -> dict:
     try:
         async with Client(vfx_mcp_url) as client:
             result = _tool_data(
@@ -46,7 +69,11 @@ async def _vfx_transition(
                 )
             )
         if result.get("success") is False:
-            return {"success": False, "error": result.get("error", "transition failed")}
+            # vfx_apply's documented Return Format is {success, message,
+            # output_path} - "message" carries the actual FFmpeg stderr on
+            # failure, there's no "error" key. Reading the wrong key here
+            # silently swallowed real errors behind this generic fallback.
+            return {"success": False, "error": result.get("message") or "transition failed"}
         if not Path(output_path).exists():
             return {
                 "success": False,
