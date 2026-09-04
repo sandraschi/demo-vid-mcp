@@ -68,6 +68,13 @@ Copy-Item $src "$DevDir\${RepoName}-backend-$Triple.exe" -Force
 Write-Host "  Backend exe: $((Get-Item $src).Length / 1MB) MB" -ForegroundColor Green
 if (Test-Path "$Root\.env.example") {
     Copy-Item "$Root\.env.example" "$ResourceDir\.env.example" -Force
+    # Also seed a real .env so fleet service URLs (SPEECH_MCP_URL etc.) work
+    # out of the box on a fresh install - never overwrite one a user already
+    # customized (matches the .mcpbignore non-clobber pattern in
+    # mcp-central-docs/scripts/make-mcpb.ps1).
+    if (-not (Test-Path "$ResourceDir\.env")) {
+        Copy-Item "$Root\.env.example" "$ResourceDir\.env" -Force
+    }
 }
 if (Test-Path "$Root\scripts\playwright-capture.js") {
     Copy-Item "$Root\scripts\playwright-capture.js" "$ResourceDir\playwright-capture.js" -Force

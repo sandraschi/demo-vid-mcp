@@ -30,6 +30,7 @@
         "resources": [
             "resources/demo-vid-mcp-backend.exe",
             "resources/.env.example",
+            "resources/.env",
             "resources/playwright-capture.js"],
         "windows": {
             "webviewInstallMode": {
