@@ -153,7 +153,16 @@ async def stitch_clips(
     if len(clips) == 1:
         return {"success": True, "video_path": clips[0], "used_transitions": False}
 
-    out_dir = Path(output_dir)
+    # vfx-mcp is a separate process with its own cwd - a relative path here
+    # (config.data_dir defaults to the bare string "data") resolves fine for
+    # every ffmpeg/file call this process makes itself, but handed to vfx-mcp
+    # over MCP it gets resolved against *its* cwd instead, which doesn't have
+    # a matching data/videos/... tree, so every vfx_apply write failed with
+    # "No such file or directory" despite the connection and command both
+    # being correct. Resolve everything to absolute paths before they leave
+    # this process.
+    out_dir = Path(output_dir).resolve()
+    clips = [str(Path(c).resolve()) for c in clips]
     fallback_path = str(out_dir / "recording.webm")
     merge_files: list[Path] = []
 

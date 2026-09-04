@@ -8,6 +8,7 @@ same pattern as pipeline/desktop_capture.py's _call().
 from __future__ import annotations
 
 import logging
+from pathlib import Path
 
 from fastmcp import Client
 from fastmcp.exceptions import ToolError
@@ -35,6 +36,12 @@ async def resolve_sfx_clip(query: str, output_dir: str, sfx_mcp_url: str | None)
             "error": "sfx-mcp not configured",
             "suggestions": ["Set SFX_MCP_URL in .env"],
         }
+
+    # sfx-mcp is a separate process with its own cwd - a relative output_dir
+    # (config.data_dir defaults to the bare string "data") would resolve
+    # against *its* cwd, not this one, once handed over as `destination`
+    # (see pipeline/vfx.py's stitch_clips for the same bug, hit first there).
+    output_dir = str(Path(output_dir).resolve())
 
     try:
         async with Client(sfx_mcp_url) as client:
