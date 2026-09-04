@@ -2,6 +2,7 @@
 
 import logging
 import platform
+import tempfile
 import time
 from collections import deque
 from contextlib import asynccontextmanager
@@ -11,6 +12,7 @@ from pathlib import Path
 import httpx
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 from . import __version__
@@ -130,9 +132,11 @@ async def diagnostics():
 @app.get("/api/health/speech")
 async def speech_health():
     """Probe speech-mcp health via backend (avoids browser CORS issues)."""
+    if not config.speech_mcp_url:
+        return {"detected": False, "error": "SPEECH_MCP_URL not configured"}
     try:
         async with httpx.AsyncClient(timeout=3) as client:
-            r = await client.get("http://127.0.0.1:10909/api/health")
+            r = await client.get(f"{config.speech_mcp_url}/api/health")
             return {"detected": r.status_code == 200, "status": r.status_code}
     except httpx.ConnectError:
         return {"detected": False}
@@ -140,8 +144,65 @@ async def speech_health():
         return {"detected": False, "error": str(e)}
 
 
+@app.get("/api/health/music")
+async def music_health():
+    """Probe songgeneration-mcp health via backend (avoids browser CORS issues)."""
+    if not config.songgeneration_mcp_url:
+        return {"detected": False, "error": "SONGGENERATION_MCP_URL not configured"}
+    try:
+        async with httpx.AsyncClient(timeout=3) as client:
+            r = await client.get(f"{config.songgeneration_mcp_url}/api/health")
+            return {"detected": r.status_code == 200, "status": r.status_code}
+    except httpx.ConnectError:
+        return {"detected": False}
+    except Exception as e:
+        return {"detected": False, "error": str(e)}
+
+
+@app.get("/api/speech/preview")
+async def speech_preview(text: str, voice: str = "heart"):
+    """Proxy a short TTS sample from speech-mcp for the Speech settings page."""
+    if not config.speech_mcp_url:
+        return JSONResponse(
+            {"success": False, "error": "SPEECH_MCP_URL not configured"}, status_code=400
+        )
+    try:
+        async with httpx.AsyncClient(timeout=30) as client:
+            r = await client.get(
+                f"{config.speech_mcp_url}/api/v1/tts/wav", params={"text": text, "voice": voice}
+            )
+        if r.status_code != 200 or len(r.content) < 100:
+            return JSONResponse(
+                {"success": False, "error": f"speech-mcp returned HTTP {r.status_code}"},
+                status_code=502,
+            )
+        return Response(content=r.content, media_type="audio/wav")
+    except httpx.RequestError as e:
+        return JSONResponse({"success": False, "error": str(e)}, status_code=502)
+
+
+@app.post("/api/music/preview")
+async def music_preview(body: dict):
+    """Generate a short music sample via songgeneration-mcp for the Music settings page."""
+    from demo_vid_mcp.pipeline.music import DEFAULT_MUSIC_PROMPT, generate_background_music
+
+    prompt = body.get("prompt") or DEFAULT_MUSIC_PROMPT
+    duration = float(body.get("duration", 15))
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        result = await generate_background_music(
+            prompt, duration, tmp_dir, config.songgeneration_mcp_url
+        )
+        if not result["success"]:
+            return JSONResponse(result, status_code=502)
+        data = Path(result["audio_path"]).read_bytes()
+        return Response(
+            content=data, media_type="audio/wav", headers={"X-Backend": result.get("backend") or ""}
+        )
+
+
 @app.post("/api/generate")
 async def api_generate(body: dict):
+    from demo_vid_mcp.pipeline.music import DEFAULT_MUSIC_PROMPT
     from demo_vid_mcp.tools.generate import demo_vid_generate
 
     repo = body.get("repo", "").strip()
@@ -149,7 +210,12 @@ async def api_generate(body: dict):
         return {"success": False, "error": "repo required"}
 
     result = await demo_vid_generate(
-        repo=repo, script_yaml=body.get("script_yaml"), page_config=body.get("page_config")
+        repo=repo,
+        script_yaml=body.get("script_yaml"),
+        page_config=body.get("page_config"),
+        voice=body.get("voice", "heart"),
+        music_enabled=bool(body.get("music_enabled", False)),
+        music_prompt=body.get("music_prompt") or DEFAULT_MUSIC_PROMPT,
     )
     return result
 
@@ -371,6 +437,9 @@ async def queue_enqueue(body: dict):
         aspect_ratio=body.get("aspect_ratio", "16:9"),
         resolution=body.get("resolution", "720p"),
         page_config=body.get("page_config"),
+        voice=body.get("voice", "heart"),
+        music_enabled=bool(body.get("music_enabled", False)),
+        music_prompt=body.get("music_prompt"),
     )
     return {"success": True, "job": job}
 
