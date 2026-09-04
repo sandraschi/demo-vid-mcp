@@ -1,12 +1,15 @@
 """Tests for pipeline stages (composer, voiceover, recorder)."""
 
+import asyncio
 import os
+import subprocess
+from pathlib import Path
 from unittest.mock import patch
 
 import pytest
 
 from demo_vid_mcp.config import config
-from demo_vid_mcp.pipeline import composer, music, recorder, voiceover
+from demo_vid_mcp.pipeline import composer, music, recorder, sfx, vfx, voiceover
 
 
 @pytest.mark.anyio
@@ -52,6 +55,118 @@ def test_build_audio_graph_both_ducks_music_under_voice():
     assert "sidechaincompress" in graph
     assert "[2:a]" in graph  # music is the ducked/main input
     assert "[1:a]" in graph  # voice is the sidechain trigger, and in the final amix
+
+
+def test_build_audio_graph_sfx_only_delays_and_mixes():
+    graph, out = composer._build_audio_graph(None, None, [(1, 5.0)])
+    assert out == "[aout]"
+    assert graph is not None
+    assert "adelay=5000|5000" in graph
+    assert "amix=inputs=1" in graph
+
+
+def test_build_audio_graph_voice_and_sfx_no_music():
+    graph, out = composer._build_audio_graph(1, None, [(2, 3.5)])
+    assert out == "[aout]"
+    assert graph is not None
+    assert "adelay=3500|3500" in graph
+    assert "amix=inputs=2" in graph
+
+
+def test_build_audio_graph_all_three_sources():
+    graph, out = composer._build_audio_graph(1, 2, [(3, 10.0), (4, 20.0)])
+    assert out == "[aout]"
+    assert graph is not None
+    assert "sidechaincompress" in graph  # music still ducks under voice
+    assert "adelay=10000|10000" in graph
+    assert "adelay=20000|20000" in graph
+    assert "amix=inputs=4" in graph  # voice + music_ducked + 2 sfx
+
+
+def test_step_timestamps():
+    steps = [{"wait": 3}, {"wait": 2}, {"wait": 5}]
+    assert sfx.step_timestamps(steps) == [0.0, 3.0, 5.0]
+
+
+@pytest.mark.anyio
+async def test_resolve_sfx_clip_not_configured():
+    result = await sfx.resolve_sfx_clip("whoosh", "/tmp", None)
+    assert result["success"] is False
+    assert "not configured" in result["error"]
+
+
+@pytest.mark.anyio
+async def test_resolve_all_sfx_skips_non_sfx_steps():
+    steps = [
+        {"action": "goto", "wait": 3},
+        {"action": "sfx", "text": "click", "wait": 1},
+    ]
+    # No sfx-mcp configured - the sfx step should be skipped (non-fatal),
+    # not raise, and the goto step should never even be considered.
+    result = await sfx.resolve_all_sfx(steps, "/tmp", None)
+    assert result == []
+
+
+@pytest.mark.anyio
+async def test_stitch_clips_no_clips():
+    result = await vfx.stitch_clips([], "/tmp", None)
+    assert result["success"] is False
+
+
+@pytest.mark.anyio
+async def test_stitch_clips_single_clip_passthrough():
+    """A single clip needs no stitching at all - returned as-is, no ffmpeg
+    or vfx-mcp call, no existence check (recorder.py already validated it)."""
+    result = await vfx.stitch_clips(["only.webm"], "/tmp", None)
+    assert result == {"success": True, "video_path": "only.webm", "used_transitions": False}
+
+
+@pytest.mark.anyio
+async def test_stitch_clips_falls_back_to_concat_without_vfx_mcp(tmp_path):
+    """Real end-to-end check of the always-available path: two genuine tiny
+    clips (ffmpeg's own synthetic test source, not Playwright output) get
+    concatenated into one valid, longer file with no vfx-mcp involved."""
+    if not composer._FFMPEG_PATH:
+        pytest.skip("FFmpeg not available")
+
+    clip_a = tmp_path / "a.webm"
+    clip_b = tmp_path / "b.webm"
+    for clip in (clip_a, clip_b):
+        proc = await asyncio.create_subprocess_exec(
+            composer._FFMPEG_PATH,
+            "-y",
+            "-f",
+            "lavfi",
+            "-i",
+            "testsrc=duration=1:size=64x64:rate=5",
+            "-c:v",
+            "libvpx",
+            str(clip),
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        await proc.wait()
+        assert clip.exists()
+
+    result = await vfx.stitch_clips([str(clip_a), str(clip_b)], str(tmp_path), None)
+    assert result["success"] is True
+    assert result["used_transitions"] is False
+    assert Path(result["video_path"]).exists()
+
+    proc = await asyncio.create_subprocess_exec(
+        composer._FFMPEG_PATH,
+        "-v",
+        "error",
+        "-i",
+        result["video_path"],
+        "-f",
+        "null",
+        "-",
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.PIPE,
+    )
+    _, stderr = await proc.communicate()
+    assert proc.returncode == 0, stderr.decode()
 
 
 @pytest.mark.anyio

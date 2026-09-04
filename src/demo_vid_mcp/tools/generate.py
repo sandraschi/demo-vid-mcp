@@ -19,6 +19,7 @@ from demo_vid_mcp.pipeline.desktop_capture import record_desktop
 from demo_vid_mcp.pipeline.music import DEFAULT_MUSIC_PROMPT, generate_background_music
 from demo_vid_mcp.pipeline.recorder import record
 from demo_vid_mcp.pipeline.script import default_script, validate_script
+from demo_vid_mcp.pipeline.sfx import resolve_all_sfx
 from demo_vid_mcp.pipeline.voiceover import generate_voiceover
 from demo_vid_mcp.server import mcp
 
@@ -309,6 +310,13 @@ async def demo_vid_generate(
     voice_task = asyncio.create_task(
         generate_voiceover(script, str(video_dir), config.speech_mcp_url)
     )
+    # resolve_all_sfx is a no-op (returns [] immediately, no network calls)
+    # when the script has no `action: sfx` steps, so this is always safe to
+    # kick off - no separate "sfx enabled" flag needed, the script's own
+    # content is the signal.
+    sfx_task = asyncio.create_task(
+        resolve_all_sfx(script.get("steps", []), str(video_dir), config.sfx_mcp_url)
+    )
     music_task = (
         asyncio.create_task(
             generate_background_music(
@@ -343,6 +351,10 @@ async def demo_vid_generate(
     if music_result is not None:
         stages["music"] = music_result
 
+    sfx_results = await sfx_task
+    if sfx_results:
+        stages["sfx"] = {"success": True, "count": len(sfx_results)}
+
     if not record_result["success"]:
         return {
             "success": False,
@@ -362,6 +374,7 @@ async def demo_vid_generate(
         voice_result.get("audio_path"),
         str(video_dir),
         music_path=(music_result or {}).get("audio_path"),
+        sfx_clips=sfx_results,
     )
     stages["compose"] = compose_result
 
