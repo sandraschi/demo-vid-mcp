@@ -2,6 +2,39 @@ import os
 from dataclasses import dataclass
 from pathlib import Path
 
+from dotenv import load_dotenv
+
+
+def _load_env_file(candidates: list[Path] | None = None) -> None:
+    """Load .env into the process environment before Config's field defaults
+    are evaluated (dataclass default expressions run once, at class-body
+    execution time - i.e. now, at import - so this must run before `class
+    Config` below, not just before `config = Config()`).
+
+    python-dotenv's own find_dotenv() walks up from the current working
+    directory, which happens to work in dev (uv run's cwd is the repo root)
+    but not in the packaged app: Tauri sets the backend's cwd to the install
+    directory (see backend.rs spawn_backend), which has no .env unless one
+    was placed there - same "packaged app has a different cwd than a dev
+    checkout" problem as _find_ffmpeg()/_find_capture_script() elsewhere in
+    this codebase. Previously nothing loaded .env at all in either mode, so
+    SPEECH_MCP_URL and friends were silently never read even when a correctly
+    filled-in .env existed right next to the code.
+    """
+    if candidates is None:
+        candidates = [
+            Path(__file__).resolve().parents[2] / ".env",  # dev repo root
+            Path.cwd() / ".env",  # packaged install dir (Tauri's cwd)
+            Path.cwd() / "resources" / ".env",  # packaged resources dir
+        ]
+    for c in candidates:
+        if c.exists():
+            load_dotenv(c)
+            return
+
+
+_load_env_file()
+
 
 @dataclass
 class Config:

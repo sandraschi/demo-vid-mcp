@@ -1,5 +1,6 @@
 """Tests for pipeline stages (composer, voiceover, recorder)."""
 
+import os
 from unittest.mock import patch
 
 import pytest
@@ -71,6 +72,23 @@ def test_config_defaults():
     assert config.backend_port == 11134
 
 
+def test_load_env_file_reads_first_existing_candidate(tmp_path, monkeypatch):
+    """Regression test: python-dotenv was a stated part of the design (the
+    voiceover error message says "Set SPEECH_MCP_URL in .env") but nothing
+    ever called load_dotenv() anywhere, so a correctly filled-in .env was
+    silently ignored in both dev and the packaged app."""
+    from demo_vid_mcp.config import _load_env_file
+
+    missing = tmp_path / "does-not-exist" / ".env"
+    real = tmp_path / ".env"
+    real.write_text("DEMO_VID_TEST_REGRESSION_VAR=loaded\n", encoding="utf-8")
+    monkeypatch.delenv("DEMO_VID_TEST_REGRESSION_VAR", raising=False)
+
+    _load_env_file([missing, real])
+
+    assert os.environ.get("DEMO_VID_TEST_REGRESSION_VAR") == "loaded"
+
+
 def test_generate_subtitles(tmp_path):
     steps = [
         {"action": "goto", "wait": 3, "say": "Welcome to demo."},
@@ -101,7 +119,10 @@ def test_job_queue_persistence(tmp_path):
     # Reload from disk to verify persistence
     q2 = JobQueue(queue_file=q_file)
     assert len(q2.list_jobs()) == 1
-    assert q2.get_job(job["id"]) is not None
-    assert q2.get_job(job["id"])["repo"] == "chitchat"
+    reloaded = q2.get_job(job["id"])
+    assert reloaded is not None
+    assert reloaded["repo"] == "chitchat"
     assert q2.cancel_job(job["id"]) is True
-    assert q2.get_job(job["id"])["status"] == "canceled"
+    canceled = q2.get_job(job["id"])
+    assert canceled is not None
+    assert canceled["status"] == "canceled"
