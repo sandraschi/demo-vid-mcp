@@ -5,7 +5,9 @@ import {
   LayoutDashboard,
   ListOrdered,
   MessageSquare,
+  Mic,
   Moon,
+  Music2,
   Settings,
   SquareStack,
   Sun,
@@ -22,9 +24,11 @@ import Detail from "./pages/Detail";
 import Generate from "./pages/Generate";
 import Help from "./pages/Help";
 import Logs from "./pages/Logs";
+import Music from "./pages/Music";
 import Queue from "./pages/Queue";
 import Scripts from "./pages/Scripts";
 import SettingsPage from "./pages/Settings";
+import Speech from "./pages/Speech";
 import { useBackendStore } from "./store/backend";
 
 const NAV = [
@@ -32,6 +36,8 @@ const NAV = [
   { id: "depot", label: "Depot", icon: Warehouse },
   { id: "generate", label: "Generate", icon: Video },
   { id: "choreography", label: "Choreography", icon: Clapperboard },
+  { id: "speech", label: "Speech", icon: Mic },
+  { id: "music", label: "Music", icon: Music2 },
   { id: "chat", label: "Chat", icon: MessageSquare },
   { id: "scripts", label: "Scripts", icon: FileText },
   { id: "settings", label: "Settings", icon: Settings },
@@ -120,6 +126,8 @@ export default function App() {
     detail: Detail,
     generate: Generate,
     choreography: Choreography,
+    speech: Speech,
+    music: Music,
     chat: Chat,
     settings: SettingsPage,
     logs: Logs,
