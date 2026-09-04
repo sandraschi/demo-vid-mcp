@@ -16,6 +16,16 @@ interface RepoPage {
   level: PageLevel;
 }
 
+// Set on the Speech/Music settings pages, read here at request time so a
+// change made without reloading Generate still takes effect immediately.
+function readAudioSettings() {
+  return {
+    voice: localStorage.getItem("demo_vid_voice") || "heart",
+    music_enabled: localStorage.getItem("demo_vid_music_enabled") === "1",
+    music_prompt: localStorage.getItem("demo_vid_music_prompt") || undefined,
+  };
+}
+
 export default function Generate() {
   const [categories, setCategories] = useState<RepoCategory[]>([]);
   const [selectedCat, setSelectedCat] = useState("");
@@ -99,7 +109,7 @@ export default function Generate() {
     setBusy(true);
     setResult(null);
     try {
-      const body: any = { repo: selectedRepo, page_config: pageConfig };
+      const body: any = { repo: selectedRepo, page_config: pageConfig, ...readAudioSettings() };
       const trimmed = script.trim();
       if (trimmed && (trimmed.startsWith("{") || trimmed.startsWith("title:"))) {
         body.script_yaml = trimmed;
@@ -134,6 +144,7 @@ export default function Generate() {
         aspect_ratio: aspectRatio,
         resolution: resolution,
         page_config: pageConfig,
+        ...readAudioSettings(),
       };
       const trimmed = script.trim();
       if (trimmed && (trimmed.startsWith("{") || trimmed.startsWith("title:"))) {

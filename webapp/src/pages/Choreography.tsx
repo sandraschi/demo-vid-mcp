@@ -151,7 +151,13 @@ export default function Choreography() {
     title_card: false,
   });
   const [title, setTitle] = useState("Demo Video");
-  const [voiceName, setVoiceName] = useState("heart");
+  const [voiceName, setVoiceNameState] = useState(
+    () => localStorage.getItem("demo_vid_voice") || "heart",
+  );
+  const setVoiceName = useCallback((v: string) => {
+    setVoiceNameState(v);
+    localStorage.setItem("demo_vid_voice", v);
+  }, []);
   const [yamlPreview, setYamlPreview] = useState("");
   const [repo, setRepo] = useState("");
 
@@ -209,7 +215,10 @@ export default function Choreography() {
       voice: voiceName,
       title_style: options.title_card ? { type: "plain", duration: 4 } : undefined,
       desktop_capture: options.desktop_capture ? true : undefined,
-      music: options.music ? { source: "stems", track: "ambient-calm", volume: 0.3 } : undefined,
+      bg_music: options.music,
+      music_prompt: options.music
+        ? localStorage.getItem("demo_vid_music_prompt") || undefined
+        : undefined,
       subtitle_style: options.subtitles ? { font: "Inter", color: "#ffffff", size: 24 } : undefined,
       steps: steps.map((s) => {
         const base: any = { action: s.action };
@@ -240,7 +249,19 @@ export default function Choreography() {
       return;
     }
     const yaml_str = generateYaml();
-    const body = { repo, script_yaml: JSON.stringify(yaml_str) };
+    // demo_vid_generate's voice/music_enabled/music_prompt params always
+    // override whatever script_yaml itself contains (same contract as
+    // aspect_ratio/resolution) - pass this page's own choices through
+    // explicitly so they aren't silently reset to the tool's defaults.
+    const body = {
+      repo,
+      script_yaml: JSON.stringify(yaml_str),
+      voice: voiceName,
+      music_enabled: options.music,
+      music_prompt: options.music
+        ? localStorage.getItem("demo_vid_music_prompt") || undefined
+        : undefined,
+    };
     try {
       const r = await fetch(apiUrl("/api/generate"), {
         method: "POST",
@@ -252,7 +273,7 @@ export default function Choreography() {
     } catch (e) {
       alert(`Error: ${e}`);
     }
-  }, [repo, generateYaml]);
+  }, [repo, generateYaml, voiceName, options.music]);
 
   return (
     <div className="p-6 max-w-6xl mx-auto">
