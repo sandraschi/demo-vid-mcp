@@ -192,6 +192,133 @@ async def test_voiceover_no_say_segments():
     assert result["audio_path"] is None
 
 
+def _write_test_wav(path: Path, seconds: float, rate: int = 8000) -> None:
+    """A real, valid WAV file of exactly `seconds` duration (silence) - no
+    FFmpeg/pydub dependency, just the stdlib wave module, matching how
+    wav_duration_s itself reads files."""
+    import wave as wave_module
+
+    n_frames = int(seconds * rate)
+    with wave_module.open(str(path), "wb") as w:
+        w.setnchannels(1)
+        w.setsampwidth(2)
+        w.setframerate(rate)
+        w.writeframes(b"\x00\x00" * n_frames)
+
+
+def test_wav_duration_s_reads_real_wav(tmp_path):
+    wav_path = tmp_path / "test.wav"
+    _write_test_wav(wav_path, 2.5)
+    assert voiceover.wav_duration_s(wav_path) == pytest.approx(2.5, abs=0.01)
+
+
+def test_wav_duration_s_missing_file_returns_none(tmp_path):
+    assert voiceover.wav_duration_s(tmp_path / "does-not-exist.wav") is None
+
+
+def test_wav_duration_s_corrupt_file_returns_none(tmp_path):
+    bad = tmp_path / "corrupt.wav"
+    bad.write_bytes(b"not a real wav file")
+    assert voiceover.wav_duration_s(bad) is None
+
+
+def test_align_script_waits_stretches_long_narration():
+    """A line whose real TTS length exceeds its authored wait gets stretched
+    to narration + pad, so the page doesn't cut away mid-sentence."""
+    script = {"steps": [{"action": "goto", "wait": 2, "say": "a long narrated line"}]}
+    result = voiceover.align_script_waits(script, [5.0])
+    assert result["adjusted"] == 1
+    assert script["steps"][0]["wait"] == pytest.approx(5.0 + voiceover.END_OF_LINE_PAD_S)
+
+
+def test_align_script_waits_keeps_short_narration_untouched():
+    """A line whose authored wait already covers the real TTS length + pad
+    is left alone - alignment only ever stretches, never shortens."""
+    script = {"steps": [{"action": "goto", "wait": 10, "say": "short line"}]}
+    result = voiceover.align_script_waits(script, [1.0])
+    assert result["adjusted"] == 0
+    assert script["steps"][0]["wait"] == 10
+
+
+def test_align_script_waits_respects_min_wait():
+    script = {"steps": [{"action": "goto", "wait": 0.1, "say": "hi"}]}
+    voiceover.align_script_waits(script, [0.05], min_wait=1.0)
+    assert script["steps"][0]["wait"] >= 1.0
+
+
+def test_align_script_waits_skips_non_say_steps():
+    """Steps with no `say` line don't consume a segment_duration and are
+    never touched - only narrated steps participate in alignment."""
+    script = {
+        "steps": [
+            {"action": "goto", "wait": 2},
+            {"action": "goto", "wait": 2, "say": "narrated"},
+        ]
+    }
+    voiceover.align_script_waits(script, [6.0])
+    assert script["steps"][0]["wait"] == 2  # untouched, no say line
+    assert script["steps"][1]["wait"] == pytest.approx(6.0 + voiceover.END_OF_LINE_PAD_S)
+
+
+def test_align_script_waits_stops_when_durations_exhausted():
+    """Fewer segment_durations than say-steps (partial TTS failure at the
+    caller level) - steps beyond the available durations are left alone
+    rather than guessing, matching generate.py's own choice to skip
+    alignment entirely in this case rather than misalign steps to durations."""
+    script = {
+        "steps": [
+            {"action": "goto", "wait": 2, "say": "first"},
+            {"action": "goto", "wait": 2, "say": "second"},
+        ]
+    }
+    result = voiceover.align_script_waits(script, [8.0])
+    assert result["adjusted"] == 1
+    assert script["steps"][0]["wait"] == pytest.approx(8.0 + voiceover.END_OF_LINE_PAD_S)
+    assert script["steps"][1]["wait"] == 2  # never reached, durations ran out
+
+
+def test_align_script_waits_updates_duration_target():
+    script = {
+        "duration_target": 30,
+        "steps": [{"action": "goto", "wait": 2, "say": "a line needing more time"}],
+    }
+    voiceover.align_script_waits(script, [10.0])
+    expected_total = 10.0 + voiceover.END_OF_LINE_PAD_S
+    assert script["duration_target"] == max(30, round(expected_total) + 5)
+
+
+@pytest.mark.anyio
+async def test_generate_voiceover_uses_voice_id_param(monkeypatch, tmp_path):
+    """speech-mcp's actual query param is voice_id, not voice - a
+    regression guard for the bug that silently ignored the requested voice
+    on every single call until this was caught."""
+    captured = {}
+
+    class FakeResponse:
+        status_code = 200
+        content = b"\x00" * 200
+
+    class FakeClient:
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *a):
+            return False
+
+        async def get(self, url, params=None):
+            captured["params"] = params
+            return FakeResponse()
+
+    monkeypatch.setattr(voiceover.httpx, "AsyncClient", lambda *a, **k: FakeClient())
+    monkeypatch.setattr(voiceover, "wav_duration_s", lambda path: 1.0)
+
+    script = {"voice": "sky", "steps": [{"action": "goto", "wait": 2, "say": "hi"}]}
+    result = await voiceover.generate_voiceover(script, str(tmp_path), "http://fake:10909")
+
+    assert result["success"] is True
+    assert captured["params"] == {"text": "hi", "voice_id": "sky"}
+
+
 @pytest.mark.anyio
 async def test_recorder_empty_steps(tmp_path):
     result = await recorder.record({"steps": []}, str(tmp_path))

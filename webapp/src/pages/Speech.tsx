@@ -43,7 +43,7 @@ export default function Speech() {
     setPreviewError(null);
     try {
       const url = apiUrl(
-        `/api/speech/preview?text=${encodeURIComponent(previewText)}&voice=${encodeURIComponent(voice)}`,
+        `/api/speech/preview?text=${encodeURIComponent(previewText)}&voice_id=${encodeURIComponent(voice)}`,
       );
       const r = await fetch(url);
       if (!r.ok) {
