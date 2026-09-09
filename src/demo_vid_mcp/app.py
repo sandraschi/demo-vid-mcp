@@ -160,8 +160,13 @@ async def music_health():
 
 
 @app.get("/api/speech/preview")
-async def speech_preview(text: str, voice: str = "heart"):
-    """Proxy a short TTS sample from speech-mcp for the Speech settings page."""
+async def speech_preview(text: str, voice: str = "heart", voice_id: str | None = None):
+    """Proxy a short TTS sample from speech-mcp for the Speech settings page.
+
+    Accepts both `voice` (legacy frontend) and `voice_id` (correct speech-mcp param) for
+    backwards compat - `voice_id` wins when both are present.
+    """
+    effective_voice = voice_id if voice_id else voice
     if not config.speech_mcp_url:
         return JSONResponse(
             {"success": False, "error": "SPEECH_MCP_URL not configured"}, status_code=400
@@ -169,7 +174,8 @@ async def speech_preview(text: str, voice: str = "heart"):
     try:
         async with httpx.AsyncClient(timeout=30) as client:
             r = await client.get(
-                f"{config.speech_mcp_url}/api/v1/tts/wav", params={"text": text, "voice": voice}
+                f"{config.speech_mcp_url}/api/v1/tts/wav",
+                params={"text": text, "voice_id": effective_voice},
             )
         if r.status_code != 200 or len(r.content) < 100:
             return JSONResponse(

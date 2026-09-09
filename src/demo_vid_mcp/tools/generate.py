@@ -20,7 +20,7 @@ from demo_vid_mcp.pipeline.music import DEFAULT_MUSIC_PROMPT, generate_backgroun
 from demo_vid_mcp.pipeline.recorder import record
 from demo_vid_mcp.pipeline.script import default_script, validate_script
 from demo_vid_mcp.pipeline.sfx import resolve_all_sfx
-from demo_vid_mcp.pipeline.voiceover import generate_voiceover
+from demo_vid_mcp.pipeline.voiceover import align_script_waits, generate_voiceover
 from demo_vid_mcp.server import mcp
 
 logger = logging.getLogger("demo-vid-mcp.tools.generate")
@@ -216,8 +216,10 @@ async def demo_vid_generate(
 ) -> dict:
     """Generate a demo video for a fleet repo.
 
-    Runs the full pipeline: validate script → voiceover (speech-mcp) → record → compose (FFmpeg).
-    Stages run in parallel where possible. Output saved to data/videos/.
+    Runs the full pipeline: validate script → voiceover (speech-mcp) → align
+    waits to true narration lengths → record → compose (FFmpeg).
+    Voiceover runs first so each page holds past end-of-speech; music/sfx
+    overlap with recording. Output saved to data/videos/.
     theme="light" records the target webapp with its light-mode toggle forced
     on (bright demo); default "dark" matches fleet identity.
     aspect_ratio="9:16" generates mobile vertical video; default "16:9" is landscape desktop.
@@ -301,19 +303,45 @@ async def demo_vid_generate(
 
     stages = {}
 
-    # Voiceover, music and recording all run in parallel - music generation
-    # in particular can take up to two minutes (it's a real generative model
-    # call, not TTS), so it needs to overlap with recording rather than run
-    # after it. In desktop_mode, the "recording" is OBS capturing a native
-    # app window while mcp_call steps drive it live (see
-    # pipeline/desktop_capture.py) instead of Playwright recording a webapp.
-    voice_task = asyncio.create_task(
-        generate_voiceover(script, str(video_dir), config.speech_mcp_url)
-    )
+    # Voiceover runs FIRST, alone: its true per-segment TTS durations decide
+    # how long each page must hold. Recording used to run in parallel on the
+    # script's authored `wait` guesses (2-8s), so any line longer than its
+    # guess kept speaking over the NEXT page - the fixed-tick desync. Now
+    # each narrated step is stretched to narration + pad before the browser
+    # ever opens, so the capture advances on end-of-speech, not on a guess.
+    # Music/sfx still overlap with recording (music gen can take minutes).
+    voice_result = await generate_voiceover(script, str(video_dir), config.speech_mcp_url)
+    stages["voiceover"] = voice_result
+
+    voice_durations = voice_result.get("segment_durations") or []
+    say_count = sum(1 for s in script.get("steps", []) if (s.get("say") or "").strip())
+    if voice_result.get("success") and voice_durations:
+        if len(voice_durations) != say_count:
+            # Partial TTS failure - durations no longer line up 1:1 with say
+            # steps, so stretching waits would sync the WRONG lines to the
+            # wrong pages (worse than fixed waits). Keep authored waits.
+            logger.warning(
+                "Skipping wait alignment: %d durations for %d say steps (partial TTS failure)",
+                len(voice_durations),
+                say_count,
+            )
+        else:
+            align = align_script_waits(script, voice_durations)
+            logger.info(
+                "Aligned %d/%d narrated steps to TTS (video %.1fs -> %.1fs)",
+                align["adjusted"],
+                len(voice_durations),
+                align["old_total"],
+                align["new_total"],
+            )
+            stages["voiceover"]["alignment"] = align
+            # Persist the aligned script - what was actually recorded.
+            script_path.write_text(yaml.dump(script, default_flow_style=False), encoding="utf-8")
+
     # resolve_all_sfx is a no-op (returns [] immediately, no network calls)
     # when the script has no `action: sfx` steps, so this is always safe to
     # kick off - no separate "sfx enabled" flag needed, the script's own
-    # content is the signal.
+    # content is the signal. Timestamps derive from the ALIGNED waits.
     sfx_task = asyncio.create_task(
         resolve_all_sfx(script.get("steps", []), str(video_dir), config.sfx_mcp_url)
     )
@@ -340,9 +368,6 @@ async def demo_vid_generate(
         )
     else:
         record_task = asyncio.create_task(record(script, str(video_dir), theme=theme))
-
-    voice_result = await voice_task
-    stages["voiceover"] = voice_result
 
     record_result = await record_task
     stages["recording"] = record_result
@@ -375,6 +400,7 @@ async def demo_vid_generate(
         str(video_dir),
         music_path=(music_result or {}).get("audio_path"),
         sfx_clips=sfx_results,
+        voice_durations=voice_result.get("segment_durations"),
     )
     stages["compose"] = compose_result
 

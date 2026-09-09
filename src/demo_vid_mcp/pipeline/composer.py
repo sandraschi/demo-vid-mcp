@@ -52,20 +52,39 @@ def _find_font() -> str | None:
 _FONT_PATH = _find_font()
 
 
-def generate_subtitles(steps: list[dict], output_dir: Path) -> tuple[Path | None, Path | None]:
-    """Generate WebVTT and SRT subtitle sidecars based on narration step timings."""
+def generate_subtitles(
+    steps: list[dict],
+    output_dir: Path,
+    segment_durations: list[float] | None = None,
+) -> tuple[Path | None, Path | None]:
+    """Generate WebVTT and SRT subtitle sidecars based on narration step timings.
+
+    Page boundaries always advance on wait durations (current_s += wait), but
+    when segment_durations (true TTS lengths, in say-step order) is given,
+    each caption ends at start + narration length instead of start + full
+    wait - so the caption disappears when the line finishes speaking while
+    the page itself still holds through its end-of-line pad. Falls back to
+    the old wait-block timing when durations are absent (silent video).
+    """
     vtt_lines = ["WEBVTT", ""]
     srt_lines = []
 
     current_s = 0.0
     index = 1
+    seg_idx = 0
 
     for step in steps:
         wait_s = float(step.get("wait", 2.0))
         say_text = (step.get("say") or "").strip()
         if say_text:
             start_s = current_s
-            end_s = current_s + wait_s
+            if segment_durations is not None and seg_idx < len(segment_durations):
+                # Cap at the full dwell so a mis-measured duration can never
+                # bleed a caption onto the next page.
+                end_s = start_s + min(segment_durations[seg_idx], wait_s)
+            else:
+                end_s = current_s + wait_s
+            seg_idx += 1
 
             def fmt_time(sec: float, decimal_sep: str) -> str:
                 hours = int(sec // 3600)
@@ -207,6 +226,7 @@ async def compose(
     output_dir: str,
     music_path: str | None = None,
     sfx_clips: list[dict] | None = None,
+    voice_durations: list[float] | None = None,
 ) -> dict:
     """Compose final .mp4 from recording + optional voiceover + music + sfx + title card.
 
@@ -216,6 +236,9 @@ async def compose(
     sfx_clips (from pipeline.sfx.resolve_all_sfx) is a list of
     {"audio_path": str, "start": float} - each clip is delayed to its
     timestamp and mixed in alongside voice/music.
+    voice_durations (true per-say TTS lengths, in say-step order) is passed
+    through to generate_subtitles so captions end at end-of-speech while
+    page boundaries still hold through the alignment pad.
 
     ## Return Format
     {"success": bool, "mp4_path": str | None, "poster_path": str | None, "vtt_path": str | None, "srt_path": str | None, "message": str}
@@ -328,7 +351,9 @@ async def compose(
             }
 
         # Generate subtitles & poster thumbnail
-        vtt_path, srt_path = generate_subtitles(script.get("steps", []), out_dir)
+        vtt_path, srt_path = generate_subtitles(
+            script.get("steps", []), out_dir, segment_durations=voice_durations
+        )
         poster_path = await extract_poster(output, out_dir)
 
         return {
