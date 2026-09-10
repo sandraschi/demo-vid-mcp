@@ -1,5 +1,76 @@
 # Changelog
 
+## 0.4.0 (2026-09-11)
+
+- **Real background music**: `pipeline/music.py` generates ambient tracks via songgeneration-mcp
+  (Lyria 3 Pro / ACE-Step / Stable Audio / Studio SG2, tried in order) and mixes them under the
+  voiceover with genuine sidechain ducking in `composer.py` - the "Background Audio Bed... with
+  voiceover ducking" bullet had described a stub field (`bg_music`) that nothing ever read since
+  v0.3.0. New `demo_vid_generate(music_enabled, music_prompt)` params; dedicated **Music** webapp
+  page (enable toggle, mood/style prompt, health check, generate-and-preview).
+- **Real timed sound effects**: `pipeline/sfx.py` resolves each Choreography `action: sfx` step
+  (a step type that existed in the UI with no backend behind it) via sfx-mcp (FreeSound CC0) and
+  mixes the result in at its exact timestamp. Falls back to a skipped-with-warning, non-fatal, when
+  sfx-mcp isn't configured or no match is found.
+- **Real page-to-page video transitions**: `playwright-capture.js` now records one clip per page
+  visit (opening a fresh Playwright page per `goto`) instead of one flat continuous capture;
+  `pipeline/vfx.py` joins the clips via vfx-mcp's real crossfade/fade-to-black/wipe/slide, falling
+  back to a plain hard-cut concat (no re-encode) when vfx-mcp is unavailable, disabled
+  (`transition_style: "none"`), or a transition call fails partway through. Single-page scripts are
+  unaffected - still exactly one clip, byte-for-byte the same as before.
+  - Found and fixed 5 real bugs in vfx-mcp's own codebase while integrating it (pushed upstream):
+    a completely unreachable `/mcp` endpoint (missing `http_app(path="/")` + no
+    `lifespan=mcp_app.lifespan`), a `"crossfade"` transition using an FFmpeg filter name that
+    doesn't exist (`xfade=transition=fade` is correct) plus a missing `offset` on every xfade-based
+    transition so the blend started at frame 0 instead of the real clip boundary, an error dict key
+    mismatch that silently swallowed the real FFmpeg error behind a generic fallback message, and
+    that error being truncated to only FFmpeg's useless version banner.
+  - Root cause underneath several of the above, on this repo's side: `config.data_dir` defaults to
+    the bare relative string `"data"`, which resolves fine for every file operation this process
+    does itself, but vfx-mcp/sfx-mcp are *separate processes* with their own cwd - a relative path
+    handed to them over MCP resolved against the wrong directory entirely. All cross-process paths
+    now resolved to absolute before leaving this process.
+- **Narration no longer desyncs from video on long lines.** Voiceover now runs first, alone (not in
+  parallel with recording); each segment's true TTS length is probed (`wave` stdlib module, no
+  FFmpeg needed) and every narrated step's `wait` is stretched to
+  `max(authored, narration + 0.8s pad, 1.0s floor)` before the browser ever opens - the capture
+  advances on end-of-speech, not a fixed 2-8s guess. Subtitles now end at true speech-end instead of
+  the full stretched wait block.
+- **Fixed**: speech-mcp's actual TTS query parameter is `voice_id`, not `voice` - confirmed at the
+  source (`api_tts_wav`'s signature takes no `voice` parameter at all). Every voice selection made
+  anywhere in this app - the Speech page, `demo_vid_generate`'s `voice` param, Choreography's
+  picker - was silently ignored by FastAPI's unmatched-param fallback since voice selection was
+  first added; speech-mcp's own default voice played every time regardless of selection.
+- **Fixed**: the packaged app's Content-Security-Policy declared `connect-src`/`img-src` but no
+  `media-src`, which fell back to `default-src 'self'` - blocking both `blob:` URLs (Speech/Music
+  preview audio) and `http://127.0.0.1:11134` (Depot/Detail's `<video>` player) with no visible
+  error, the whole time.
+- **New dedicated Speech and Music settings pages**: voice picker (heart/sky/adam, shared with
+  Generate/Choreography via `localStorage`), health checks against speech-mcp/songgeneration-mcp,
+  and real generate-and-preview flows backed by new `/api/speech/preview` and `/api/music/preview`
+  proxy endpoints.
+- **Per-page detail control**: `default_page_level()` classifies each auto-drafted page as
+  Skip/Show/Detail by keyword heuristics (`search`/`depot`/`dashboard`/`chat`/`generate` → detail;
+  `log`/`swagger`/`apidocs`/`settings` → skip), overridable via a new Generate-page checklist and
+  `demo_vid_list_pages`/`page_config`. "Detail" pages get real dwell time and substantive narration
+  even when the target repo's README has no `## Webapp` purpose table. `duration_target` now
+  reflects actual narrated content (`sum(step waits) + 5s`, 30s floor) instead of a step-count guess.
+- **Fixed**: `recorder.py`'s Playwright capture timeout was a flat 45s, too short once
+  detail-level scripts routinely produced 50s+ of content - now scales with the script's own
+  content length.
+- **Fixed**: `.env` was never actually loaded anywhere in the codebase, despite every fleet-service
+  URL being read via `os.getenv()` - `config.py` now loads it before its dataclass field defaults
+  are evaluated, trying the dev repo root, then the packaged app's install dir, then its
+  `resources/` folder.
+- **Fixed**: `SFX_MCP_URL`/`VFX_MCP_URL`/`STEMS_MCP_URL` in `.env.example` pointed at the wrong
+  ports (frontend instead of backend) with no `/mcp` suffix - pre-existing copy-paste errors never
+  caught before anything tried to actually connect through them.
+- **Fixed**: the background job queue's `enqueue()` stored `aspect_ratio`/`resolution` on the job
+  but `_process_queue()` never passed them to the generator - the Generate page's selectors were
+  silent no-ops for anything sent to the background queue.
+- **Fixed**: Choreography's "Desktop" checkbox (desktop-capture mode) had no effect - tracked in
+  component state and rendered as a checkbox, never written into the generated script.
+
 ## 0.3.0 (2026-09-03)
 
 - **Subtitles & Closed Captions (.vtt & .srt)**: `composer.py` now automatically parses narration script step timings and generates WebVTT (`subtitles.vtt`) and SubRip (`subtitles.srt`) sidecars. The webapp video player in `Depot.tsx` and `Detail.tsx` renders native `<track kind="subtitles">` elements.
