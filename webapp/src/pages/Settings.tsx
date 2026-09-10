@@ -175,9 +175,9 @@ export default function SettingsPage() {
       <div className="bg-zinc-900 rounded-lg p-4 border border-zinc-800">
         <h2 className="text-sm font-semibold text-zinc-200 mb-2">About</h2>
         <div className="text-sm text-zinc-300 space-y-1">
-          <div>demo-vid-mcp v{backendVersion || "0.3.0"}</div>
+          <div>demo-vid-mcp v{backendVersion || "0.4.0"}</div>
           <div>Backend: 11134 · Frontend: 11135</div>
-          <div>speech-mcp: 10909</div>
+          <div>speech-mcp: 10909 · songgeneration-mcp: 10885 · sfx-mcp: 11120 · vfx-mcp: 11122</div>
           <div className="text-xs text-zinc-600 mt-2">
             Fleet repo: {providers.length} providers probed ·{" "}
             {providers.filter((p) => p.detected).length} detected

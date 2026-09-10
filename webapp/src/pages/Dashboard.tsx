@@ -59,7 +59,7 @@ export default function Dashboard() {
           <div>
             <h1 className="text-2xl font-bold text-zinc-100">demo-vid-mcp</h1>
             <p className="text-sm text-zinc-300">
-              Fleet intro video pipeline v{stats?.version ?? "0.3.0"}
+              Fleet intro video pipeline v{stats?.version ?? "0.4.0"}
             </p>
           </div>
           <div className="ml-auto flex items-center gap-2">
@@ -161,7 +161,7 @@ export default function Dashboard() {
             <Film className="h-4 w-4" />
             <span className="text-sm">Pipeline</span>
           </div>
-          <span className="text-2xl font-bold text-amber-400">v{stats?.version ?? "0.3.0"}</span>
+          <span className="text-2xl font-bold text-amber-400">v{stats?.version ?? "0.4.0"}</span>
         </div>
       </div>
 

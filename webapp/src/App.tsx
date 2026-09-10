@@ -194,7 +194,7 @@ export default function App() {
               <span
                 className={`w-2 h-2 rounded-full ${backendOk === null ? "bg-zinc-500" : backendOk ? "bg-green-500" : "bg-red-500"}`}
               />
-              v{backendVersion ?? "0.3.0"}
+              v{backendVersion ?? "0.4.0"}
             </span>
           )}
           {sidebarOpen && <span>{Math.round(zoom * 100)}%</span>}
