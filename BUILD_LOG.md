@@ -434,3 +434,46 @@ demo-vid-mcp.
 **Not yet built this round**: dedicated SFX/VFX settings pages (mirroring Speech/Music) -
 sfx/vfx currently only reachable via Choreography's raw script fields
 (`action: sfx`, `transition_style`), no Generate-page toggle or checklist UI yet.
+
+## 2026-09-11 update 10 — every voice pick was ignored; narration/video desync fixed
+
+Found sitting uncommitted in the working tree from an untracked prior session: a real
+bug fix and a substantial feature, both complete and passing but never shipped.
+
+22. **speech-mcp's real TTS param is `voice_id`, not `voice`.** Confirmed at the
+    source (`speech_mcp/server.py:994`'s `api_tts_wav` signature takes no `voice`
+    parameter at all - only `voice_id`, defaulting to `"default"`). Every voice
+    selection made anywhere in this app - the Speech page, Generate's `voice` param,
+    Choreography's picker - was silently ignored by FastAPI's query-param binding
+    (no error, no 4xx, just an unmatched param and a fallback to speech-mcp's own
+    default) since the day voice selection was added. Fixed in `voiceover.py`'s TTS
+    call and the Speech page's preview request; `/api/speech/preview` accepts both
+    names for backward compat.
+23. **Narration and video no longer desync on long lines.** Recording and voiceover
+    used to run in parallel against the script's authored `wait` guesses (2-8s) - any
+    line whose real TTS length exceeded its guess kept speaking over whatever page
+    came next. Voiceover now runs first, alone; `wav_duration_s()` probes each
+    segment's true length (stdlib `wave` module, no FFmpeg needed) and
+    `align_script_waits()` stretches every narrated step to
+    `max(authored, narration + 0.8s pad, 1.0s floor)` before the browser ever opens -
+    the capture advances on end-of-speech, not a guess. Skips alignment entirely
+    (keeps authored waits) on partial TTS failure, since misaligned durations would
+    sync narration to the wrong pages, worse than the original desync. Subtitles now
+    end at true speech-end instead of the full stretched wait block, via the same
+    `segment_durations` threaded into `generate_subtitles()`.
+
+**Verified for real, twice** - once as a standalone pipeline test, once through the
+fully rebuilt and reinstalled packaged app hitting its real `/api/generate` endpoint:
+a script with one short line (guessed 2s, real 1.53s) and one long line (guessed 2s,
+real 7.71s) came back `"alignment":{"adjusted":3,"old_total":5.0,"new_total":12.6}` -
+every step stretched correctly, and the produced `.vtt` showed captions ending at
+1.529s/10.008s/11.834s (true speech-end) with page boundaries holding through the
+0.8s pad, exactly as designed. Confirmed the `voice_id` fix changes actual output too:
+identical text against real speech-mcp produced measurably different file sizes for
+`voice_id=heart` (70794 bytes) vs `voice_id=adam` (68812 bytes) vs the old broken
+`voice=heart` request (83534 bytes, silently using speech-mcp's own default instead).
+
+Added test coverage for both fixes (0% covered before this): `wav_duration_s`,
+`align_script_waits` (stretching, floor, non-say-step skipping, partial-duration
+exhaustion, `duration_target` recompute), and a regression guard asserting
+`generate_voiceover` sends `voice_id` in its request, not `voice`.
