@@ -1,6 +1,6 @@
 {
   "name": "demo-vid-mcp",
-  "version": "0.3.0",
-  "description": "Fleet intro-video pipeline: script -> Playwright/desktop capture -> speech-mcp narration -> FFmpeg compose -> MP4",
+  "version": "0.4.0",
+  "description": "Fleet intro-video pipeline: script -> Playwright/desktop capture -> speech-mcp narration -> songgeneration-mcp music -> sfx-mcp effects -> vfx-mcp transitions -> FFmpeg compose -> MP4",
   "hooks": "../hooks/hooks.json"
 }

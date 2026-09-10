@@ -1,8 +1,8 @@
 {
   "$schema": "https://glama.ai/schemas/mcp.json",
   "name": "demo-vid-mcp",
-  "version": "0.3.0",
-  "description": "Fleet demo video pipeline — record webapp walkthroughs (Playwright), add TTS voiceover (speech-mcp), compose MP4 (FFmpeg). Auto-starts target repos, detects blank pages, stores in categorized depot with rebuild.",
+  "version": "0.4.0",
+  "description": "Fleet demo video pipeline — record webapp walkthroughs page-by-page (Playwright), add TTS voiceover synced to true speech length (speech-mcp), join pages with real crossfade/wipe transitions (vfx-mcp), mix in background music (songgeneration-mcp) and timed sound effects (sfx-mcp), compose MP4 (FFmpeg). Auto-starts target repos, detects blank pages, stores in categorized depot with rebuild.",
   "author": "Sandra Schieder",
   "license": "MIT",
   "language": "python",
@@ -10,7 +10,7 @@
   "type": "mcp_server",
   "status": "beta",
   "transport": ["stdio"],
-  "keywords": ["video", "demo", "playwright", "ffmpeg", "tts", "fleet", "fastmcp"],
+  "keywords": ["video", "demo", "playwright", "ffmpeg", "tts", "music", "sound-effects", "video-transitions", "fleet", "fastmcp"],
   "categories": ["Developer Tools", "Video", "AI Agents"],
   "homepage": "https://github.com/sandraschi/demo-vid-mcp",
   "repository": {
