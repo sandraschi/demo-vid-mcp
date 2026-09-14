@@ -21,7 +21,6 @@ build/
 
 # MCPB pack staging
 mcpb/src/
-mcpb/
 
 # Data / DB
 data/
