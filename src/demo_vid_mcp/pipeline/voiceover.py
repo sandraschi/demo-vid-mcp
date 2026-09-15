@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import contextlib
 import logging
 import wave
@@ -167,7 +168,7 @@ async def generate_voiceover(script: dict, output_dir: str, speech_mcp_url: str 
 
         final = Path(output_dir) / "voiceover.wav"
         if len(audio_paths) == 1:
-            shutil.copy2(audio_paths[0], final)
+            await asyncio.to_thread(shutil.copy2, audio_paths[0], final)
             audio_paths[0].unlink()
         total = wav_duration_s(final)
         if total is None and segment_durations:

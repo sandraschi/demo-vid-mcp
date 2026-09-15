@@ -1,5 +1,6 @@
 """FastAPI application - REST API for demo video webapp."""
 
+import asyncio
 import logging
 import platform
 import tempfile
@@ -481,7 +482,7 @@ async def delete_repo_videos(repo: str):
         return {"success": False, "error": f"No videos found for {repo}"}
     import shutil
 
-    shutil.rmtree(repo_dir, ignore_errors=True)
+    await asyncio.to_thread(shutil.rmtree, repo_dir, ignore_errors=True)
     return {"success": True, "message": f"Deleted all videos for {repo}"}
 
 
@@ -513,7 +514,7 @@ async def insert_into_repo(repo: str):
     target_dir = config.repos_root / repo / "docs" / "screenshots"
     target_dir.mkdir(parents=True, exist_ok=True)
     for v in mp4_files:
-        shutil.copy2(v, target_dir / v.name)
+        await asyncio.to_thread(shutil.copy2, v, target_dir / v.name)
 
     readme_path = config.repos_root / repo / "README.md"
     if readme_path.exists():

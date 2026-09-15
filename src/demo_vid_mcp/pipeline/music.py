@@ -8,6 +8,7 @@ MCP protocol (see config.py's note on speech_mcp_url/songgeneration_mcp_url).
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import shutil
 from pathlib import Path
@@ -79,6 +80,6 @@ async def generate_background_music(
         }
 
     dest = Path(output_dir) / "music.wav"
-    shutil.copy2(src, dest)
+    await asyncio.to_thread(shutil.copy2, src, dest)
     logger.info("Background music generated via %s backend: %s", data.get("backend"), dest.name)
     return {"success": True, "audio_path": str(dest), "backend": data.get("backend")}
