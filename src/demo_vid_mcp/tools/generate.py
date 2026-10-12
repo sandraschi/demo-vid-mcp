@@ -64,7 +64,8 @@ async def _ensure_target_running(repo: str, base_url: str) -> bool:
     import subprocess as _sp
 
     try:
-        _sp.run(
+        await asyncio.to_thread(
+            _sp.run,
             [
                 "powershell.exe",
                 "-NoProfile",
@@ -118,19 +119,25 @@ async def _ensure_target_running(repo: str, base_url: str) -> bool:
     for wd in webapp_dirs:
         webapp_dir = repo_dir / wd
         if webapp_dir.exists() and (webapp_dir / "package.json").exists():
+            bun_paths = [
+                Path.home() / ".bun" / "bin",
+                Path("C:/Program Files/nodejs"),
+            ]
+            path_prefix = ";".join(str(p) for p in bun_paths if p.exists())
+            path_set = f"$env:PATH='{path_prefix};' + $env:PATH; " if path_prefix else ""
             logger.info("Starting %s frontend (Vite) from %s...", repo, wd)
             _proc = await asyncio.create_subprocess_exec(  # noqa: F841
                 "powershell.exe",
                 "-NoProfile",
                 "-Command",
-                f"cd {webapp_dir}; bun run dev --port {frontend_port}",
+                f"{path_set}cd {webapp_dir}; bun run dev --port {frontend_port}",
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
             )
             break
 
-    # 3. Wait for both to come up (up to 30s)
-    for i in range(30):
+    # 3. Wait for both to come up (up to 90s - Vite cold start after backend autostart)
+    for i in range(90):
         await asyncio.sleep(1)
         try:
             async with httpx.AsyncClient(timeout=2) as client:
@@ -260,7 +267,21 @@ async def demo_vid_generate(
             return {"success": False, "error": validated["error"]}
         script = validated["script"]
     else:
-        script = default_script(repo, page_config)
+        custom_path = config.repos_root / repo / "docs" / "demo-vid" / "narration.yaml"
+        if custom_path.is_file():
+            validated = validate_script(custom_path.read_text(encoding="utf-8"))
+            if validated["success"]:
+                script = validated["script"]
+                logger.info("Using repo narration script: %s", custom_path)
+            else:
+                logger.warning(
+                    "Invalid %s: %s - falling back to default_script",
+                    custom_path,
+                    validated.get("error"),
+                )
+                script = default_script(repo, page_config)
+        else:
+            script = default_script(repo, page_config)
 
     if aspect_ratio:
         script["aspect_ratio"] = aspect_ratio

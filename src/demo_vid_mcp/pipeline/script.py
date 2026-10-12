@@ -40,6 +40,31 @@ def _parse_router_paths(app_tsx: Path) -> dict[str, str]:
     return routes
 
 
+def _read_canned_pages(repo: str) -> dict[str, list[str]]:
+    """Load docs/demo-vid/canned-pages.yaml when present.
+
+    Maps lowercase page name to one or two narration lines for boilerplate
+    pages (dashboard, logs, help, settings, tools). Used by default_script()
+    instead of generic README table one-liners when a match exists.
+    """
+    path = config.repos_root / repo / "docs" / "demo-vid" / "canned-pages.yaml"
+    if not path.exists():
+        return {}
+    try:
+        data = yaml.safe_load(path.read_text(encoding="utf-8"))
+    except yaml.YAMLError:
+        return {}
+    if not isinstance(data, dict):
+        return {}
+    out: dict[str, list[str]] = {}
+    for key, val in data.items():
+        if isinstance(key, str) and isinstance(val, list):
+            lines = [str(x).strip() for x in val if str(x).strip()]
+            if lines:
+                out[key.strip().lower()] = lines
+    return out
+
+
 def _read_webapp_table(readme: str) -> dict[str, str]:
     """Parse a README's `## Webapp` page-purpose table into {lowercase page name: purpose}.
 
@@ -192,9 +217,29 @@ def default_script(repo: str, page_config: dict[str, str] | None = None) -> dict
     # narration) - comes from page_config if the caller specified one for
     # this page, else a keyword-based default (see default_page_level()).
     webapp_table = _read_webapp_table(readme) if readme else {}
+    canned_pages = _read_canned_pages(repo)
     for page in pages:
         level = page_config.get(page["name"], default_page_level(page["name"]))
-        if level == "skip":
+        canned = canned_pages.get(page["name"])
+        if level == "skip" and not canned:
+            continue
+        if canned:
+            steps.append(
+                {
+                    "action": "goto",
+                    "url": page["path"],
+                    "wait": 3,
+                    "say": canned[0],
+                }
+            )
+            if len(canned) > 1:
+                steps.append(
+                    {
+                        "action": "hold",
+                        "wait": 3,
+                        "say": canned[1],
+                    }
+                )
             continue
         purpose = webapp_table.get(page["name"])
         if level == "detail" and purpose:
@@ -310,4 +355,48 @@ def validate_script(raw: str) -> dict:
     for i, step in enumerate(script["steps"]):
         if "action" not in step:
             return {"success": False, "error": f"Step {i}: missing 'action'"}
+        if step.get("action") == "arrow":
+            err = _validate_arrow_step(i, step)
+            if err:
+                return {"success": False, "error": err}
     return {"success": True, "script": script}
+
+
+_ARROW_COLORS = (
+    "red",
+    "orange",
+    "yellow",
+    "green",
+    "teal",
+    "blue",
+    "purple",
+    "pink",
+    "black",
+    "white",
+)
+_ARROW_STYLES = ("arrow", "ring", "box")
+_ARROW_SIZES = ("S", "M", "L")
+_HEX_COLOR_RE = re.compile(r"^#[0-9a-fA-F]{6}$")
+
+
+def _validate_arrow_step(i: int, step: dict) -> str | None:
+    """Validate a bigarrow-style `action: arrow` step (in-video overlay).
+
+    Filched from franzenzenhofer/big-arrow-on-the-screen (MIT): target by
+    CSS selector (`target`) or page pixels (`at: "x,y"`), plus label text
+    and look (color/style/size). Unlike bigarrow there is no OS overlay,
+    focus steal, or permission model - this renders a DOM overlay inside
+    Playwright capture, so it is baked into the video.
+    """
+    if not step.get("target") and not step.get("at"):
+        return f"Step {i} (arrow): need 'target' CSS selector or 'at: \"x,y\"'"
+    color = str(step.get("color", "red"))
+    if color not in _ARROW_COLORS and not _HEX_COLOR_RE.match(color):
+        return f"Step {i} (arrow): invalid color '{color}'. Supported: {', '.join(_ARROW_COLORS)} or #RRGGBB"
+    style = str(step.get("style", "arrow"))
+    if style not in _ARROW_STYLES:
+        return f"Step {i} (arrow): invalid style '{style}'. Supported: arrow, ring, box"
+    size = str(step.get("size", "M"))
+    if size not in _ARROW_SIZES:
+        return f"Step {i} (arrow): invalid size '{size}'. Supported: S, M, L"
+    return None
