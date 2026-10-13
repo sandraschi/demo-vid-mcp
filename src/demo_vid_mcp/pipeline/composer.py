@@ -16,7 +16,7 @@ _FFMPEG_PATH: str | None = None
 def _find_ffmpeg() -> str | None:
     candidates = [
         shutil.which("ffmpeg"),
-        "C:\\Users\\sandr\\scoop\\shims\\ffmpeg.exe",
+        str(Path.home() / "scoop" / "shims" / "ffmpeg.exe"),
         "C:\\Program Files\\FFmpeg\\bin\\ffmpeg.exe",
         "C:\\ffmpeg\\bin\\ffmpeg.exe",
     ]
