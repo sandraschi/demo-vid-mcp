@@ -1,0 +1,1338 @@
+[
+  {
+    "name": "generate_basic_arxiv-mcp",
+    "description": "Generate a basic intro video for arxiv-mcp with no customization.",
+    "prompt": "Make a demo video for arxiv-mcp.",
+    "tool": "demo_vid_generate",
+    "arguments": {
+      "repo": "arxiv-mcp"
+    }
+  },
+  {
+    "name": "generate_basic_blender-mcp",
+    "description": "Generate a basic intro video for blender-mcp with no customization.",
+    "prompt": "Make a demo video for blender-mcp.",
+    "tool": "demo_vid_generate",
+    "arguments": {
+      "repo": "blender-mcp"
+    }
+  },
+  {
+    "name": "generate_basic_stripe-mcp",
+    "description": "Generate a basic intro video for stripe-mcp with no customization.",
+    "prompt": "Make a demo video for stripe-mcp.",
+    "tool": "demo_vid_generate",
+    "arguments": {
+      "repo": "stripe-mcp"
+    }
+  },
+  {
+    "name": "generate_basic_norirobotics-mcp",
+    "description": "Generate a basic intro video for norirobotics-mcp with no customization.",
+    "prompt": "Make a demo video for norirobotics-mcp.",
+    "tool": "demo_vid_generate",
+    "arguments": {
+      "repo": "norirobotics-mcp"
+    }
+  },
+  {
+    "name": "generate_basic_resonite-mcp",
+    "description": "Generate a basic intro video for resonite-mcp with no customization.",
+    "prompt": "Make a demo video for resonite-mcp.",
+    "tool": "demo_vid_generate",
+    "arguments": {
+      "repo": "resonite-mcp"
+    }
+  },
+  {
+    "name": "generate_basic_chess-mcp",
+    "description": "Generate a basic intro video for chess-mcp with no customization.",
+    "prompt": "Make a demo video for chess-mcp.",
+    "tool": "demo_vid_generate",
+    "arguments": {
+      "repo": "chess-mcp"
+    }
+  },
+  {
+    "name": "generate_basic_obsidian-mcp",
+    "description": "Generate a basic intro video for obsidian-mcp with no customization.",
+    "prompt": "Make a demo video for obsidian-mcp.",
+    "tool": "demo_vid_generate",
+    "arguments": {
+      "repo": "obsidian-mcp"
+    }
+  },
+  {
+    "name": "generate_basic_discord-mcp",
+    "description": "Generate a basic intro video for discord-mcp with no customization.",
+    "prompt": "Make a demo video for discord-mcp.",
+    "tool": "demo_vid_generate",
+    "arguments": {
+      "repo": "discord-mcp"
+    }
+  },
+  {
+    "name": "generate_basic_sfx-mcp",
+    "description": "Generate a basic intro video for sfx-mcp with no customization.",
+    "prompt": "Make a demo video for sfx-mcp.",
+    "tool": "demo_vid_generate",
+    "arguments": {
+      "repo": "sfx-mcp"
+    }
+  },
+  {
+    "name": "generate_basic_songgeneration-mcp",
+    "description": "Generate a basic intro video for songgeneration-mcp with no customization.",
+    "prompt": "Make a demo video for songgeneration-mcp.",
+    "tool": "demo_vid_generate",
+    "arguments": {
+      "repo": "songgeneration-mcp"
+    }
+  },
+  {
+    "name": "generate_basic_speech-mcp",
+    "description": "Generate a basic intro video for speech-mcp with no customization.",
+    "prompt": "Make a demo video for speech-mcp.",
+    "tool": "demo_vid_generate",
+    "arguments": {
+      "repo": "speech-mcp"
+    }
+  },
+  {
+    "name": "generate_basic_vfx-mcp",
+    "description": "Generate a basic intro video for vfx-mcp with no customization.",
+    "prompt": "Make a demo video for vfx-mcp.",
+    "tool": "demo_vid_generate",
+    "arguments": {
+      "repo": "vfx-mcp"
+    }
+  },
+  {
+    "name": "generate_basic_winops-mcp",
+    "description": "Generate a basic intro video for winops-mcp with no customization.",
+    "prompt": "Make a demo video for winops-mcp.",
+    "tool": "demo_vid_generate",
+    "arguments": {
+      "repo": "winops-mcp"
+    }
+  },
+  {
+    "name": "generate_basic_gitops-mcp",
+    "description": "Generate a basic intro video for gitops-mcp with no customization.",
+    "prompt": "Make a demo video for gitops-mcp.",
+    "tool": "demo_vid_generate",
+    "arguments": {
+      "repo": "gitops-mcp"
+    }
+  },
+  {
+    "name": "generate_basic_fileops-mcp",
+    "description": "Generate a basic intro video for fileops-mcp with no customization.",
+    "prompt": "Make a demo video for fileops-mcp.",
+    "tool": "demo_vid_generate",
+    "arguments": {
+      "repo": "fileops-mcp"
+    }
+  },
+  {
+    "name": "generate_basic_memops-mcp",
+    "description": "Generate a basic intro video for memops-mcp with no customization.",
+    "prompt": "Make a demo video for memops-mcp.",
+    "tool": "demo_vid_generate",
+    "arguments": {
+      "repo": "memops-mcp"
+    }
+  },
+  {
+    "name": "generate_basic_photoshop-mcp",
+    "description": "Generate a basic intro video for photoshop-mcp with no customization.",
+    "prompt": "Make a demo video for photoshop-mcp.",
+    "tool": "demo_vid_generate",
+    "arguments": {
+      "repo": "photoshop-mcp"
+    }
+  },
+  {
+    "name": "generate_basic_figma-mcp",
+    "description": "Generate a basic intro video for figma-mcp with no customization.",
+    "prompt": "Make a demo video for figma-mcp.",
+    "tool": "demo_vid_generate",
+    "arguments": {
+      "repo": "figma-mcp"
+    }
+  },
+  {
+    "name": "generate_basic_docker-mcp",
+    "description": "Generate a basic intro video for docker-mcp with no customization.",
+    "prompt": "Make a demo video for docker-mcp.",
+    "tool": "demo_vid_generate",
+    "arguments": {
+      "repo": "docker-mcp"
+    }
+  },
+  {
+    "name": "generate_basic_postgres-mcp",
+    "description": "Generate a basic intro video for postgres-mcp with no customization.",
+    "prompt": "Make a demo video for postgres-mcp.",
+    "tool": "demo_vid_generate",
+    "arguments": {
+      "repo": "postgres-mcp"
+    }
+  },
+  {
+    "name": "generate_voice_arxiv-mcp",
+    "description": "Generate a video for arxiv-mcp narrated in the 'heart' voice.",
+    "prompt": "Create a demo video for arxiv-mcp but use the heart voice for narration.",
+    "tool": "demo_vid_generate",
+    "arguments": {
+      "repo": "arxiv-mcp",
+      "voice": "heart"
+    }
+  },
+  {
+    "name": "generate_voice_blender-mcp",
+    "description": "Generate a video for blender-mcp narrated in the 'sky' voice.",
+    "prompt": "Create a demo video for blender-mcp but use the sky voice for narration.",
+    "tool": "demo_vid_generate",
+    "arguments": {
+      "repo": "blender-mcp",
+      "voice": "sky"
+    }
+  },
+  {
+    "name": "generate_voice_stripe-mcp",
+    "description": "Generate a video for stripe-mcp narrated in the 'bella' voice.",
+    "prompt": "Create a demo video for stripe-mcp but use the bella voice for narration.",
+    "tool": "demo_vid_generate",
+    "arguments": {
+      "repo": "stripe-mcp",
+      "voice": "bella"
+    }
+  },
+  {
+    "name": "generate_voice_norirobotics-mcp",
+    "description": "Generate a video for norirobotics-mcp narrated in the 'nicole' voice.",
+    "prompt": "Create a demo video for norirobotics-mcp but use the nicole voice for narration.",
+    "tool": "demo_vid_generate",
+    "arguments": {
+      "repo": "norirobotics-mcp",
+      "voice": "nicole"
+    }
+  },
+  {
+    "name": "generate_voice_resonite-mcp",
+    "description": "Generate a video for resonite-mcp narrated in the 'michael' voice.",
+    "prompt": "Create a demo video for resonite-mcp but use the michael voice for narration.",
+    "tool": "demo_vid_generate",
+    "arguments": {
+      "repo": "resonite-mcp",
+      "voice": "michael"
+    }
+  },
+  {
+    "name": "generate_voice_chess-mcp",
+    "description": "Generate a video for chess-mcp narrated in the 'adam' voice.",
+    "prompt": "Create a demo video for chess-mcp but use the adam voice for narration.",
+    "tool": "demo_vid_generate",
+    "arguments": {
+      "repo": "chess-mcp",
+      "voice": "adam"
+    }
+  },
+  {
+    "name": "generate_voice_obsidian-mcp",
+    "description": "Generate a video for obsidian-mcp narrated in the 'sarah' voice.",
+    "prompt": "Create a demo video for obsidian-mcp but use the sarah voice for narration.",
+    "tool": "demo_vid_generate",
+    "arguments": {
+      "repo": "obsidian-mcp",
+      "voice": "sarah"
+    }
+  },
+  {
+    "name": "generate_voice_discord-mcp",
+    "description": "Generate a video for discord-mcp narrated in the 'george' voice.",
+    "prompt": "Create a demo video for discord-mcp but use the george voice for narration.",
+    "tool": "demo_vid_generate",
+    "arguments": {
+      "repo": "discord-mcp",
+      "voice": "george"
+    }
+  },
+  {
+    "name": "generate_voice_sfx-mcp",
+    "description": "Generate a video for sfx-mcp narrated in the 'heart' voice.",
+    "prompt": "Create a demo video for sfx-mcp but use the heart voice for narration.",
+    "tool": "demo_vid_generate",
+    "arguments": {
+      "repo": "sfx-mcp",
+      "voice": "heart"
+    }
+  },
+  {
+    "name": "generate_voice_songgeneration-mcp",
+    "description": "Generate a video for songgeneration-mcp narrated in the 'sky' voice.",
+    "prompt": "Create a demo video for songgeneration-mcp but use the sky voice for narration.",
+    "tool": "demo_vid_generate",
+    "arguments": {
+      "repo": "songgeneration-mcp",
+      "voice": "sky"
+    }
+  },
+  {
+    "name": "generate_format_arxiv-mcp_16x9",
+    "description": "Generate a 16:9 video for arxiv-mcp at 720p, for a specific platform target.",
+    "prompt": "Generate a demo of arxiv-mcp in 16:9 aspect ratio at 720p resolution, for posting to social media.",
+    "tool": "demo_vid_generate",
+    "arguments": {
+      "repo": "arxiv-mcp",
+      "aspect_ratio": "16:9",
+      "resolution": "720p"
+    }
+  },
+  {
+    "name": "generate_format_blender-mcp_9x16",
+    "description": "Generate a 9:16 video for blender-mcp at 1080p, for a specific platform target.",
+    "prompt": "Generate a demo of blender-mcp in 9:16 aspect ratio at 1080p resolution, for posting to social media.",
+    "tool": "demo_vid_generate",
+    "arguments": {
+      "repo": "blender-mcp",
+      "aspect_ratio": "9:16",
+      "resolution": "1080p"
+    }
+  },
+  {
+    "name": "generate_format_stripe-mcp_1x1",
+    "description": "Generate a 1:1 video for stripe-mcp at 480p, for a specific platform target.",
+    "prompt": "Generate a demo of stripe-mcp in 1:1 aspect ratio at 480p resolution, for posting to social media.",
+    "tool": "demo_vid_generate",
+    "arguments": {
+      "repo": "stripe-mcp",
+      "aspect_ratio": "1:1",
+      "resolution": "480p"
+    }
+  },
+  {
+    "name": "generate_format_norirobotics-mcp_16x9",
+    "description": "Generate a 16:9 video for norirobotics-mcp at 720p, for a specific platform target.",
+    "prompt": "Generate a demo of norirobotics-mcp in 16:9 aspect ratio at 720p resolution, for posting to social media.",
+    "tool": "demo_vid_generate",
+    "arguments": {
+      "repo": "norirobotics-mcp",
+      "aspect_ratio": "16:9",
+      "resolution": "720p"
+    }
+  },
+  {
+    "name": "generate_format_resonite-mcp_9x16",
+    "description": "Generate a 9:16 video for resonite-mcp at 1080p, for a specific platform target.",
+    "prompt": "Generate a demo of resonite-mcp in 9:16 aspect ratio at 1080p resolution, for posting to social media.",
+    "tool": "demo_vid_generate",
+    "arguments": {
+      "repo": "resonite-mcp",
+      "aspect_ratio": "9:16",
+      "resolution": "1080p"
+    }
+  },
+  {
+    "name": "generate_format_chess-mcp_1x1",
+    "description": "Generate a 1:1 video for chess-mcp at 480p, for a specific platform target.",
+    "prompt": "Generate a demo of chess-mcp in 1:1 aspect ratio at 480p resolution, for posting to social media.",
+    "tool": "demo_vid_generate",
+    "arguments": {
+      "repo": "chess-mcp",
+      "aspect_ratio": "1:1",
+      "resolution": "480p"
+    }
+  },
+  {
+    "name": "generate_format_obsidian-mcp_16x9",
+    "description": "Generate a 16:9 video for obsidian-mcp at 720p, for a specific platform target.",
+    "prompt": "Generate a demo of obsidian-mcp in 16:9 aspect ratio at 720p resolution, for posting to social media.",
+    "tool": "demo_vid_generate",
+    "arguments": {
+      "repo": "obsidian-mcp",
+      "aspect_ratio": "16:9",
+      "resolution": "720p"
+    }
+  },
+  {
+    "name": "generate_format_discord-mcp_9x16",
+    "description": "Generate a 9:16 video for discord-mcp at 1080p, for a specific platform target.",
+    "prompt": "Generate a demo of discord-mcp in 9:16 aspect ratio at 1080p resolution, for posting to social media.",
+    "tool": "demo_vid_generate",
+    "arguments": {
+      "repo": "discord-mcp",
+      "aspect_ratio": "9:16",
+      "resolution": "1080p"
+    }
+  },
+  {
+    "name": "generate_pageconfig_arxiv-mcp",
+    "description": "Generate a video for arxiv-mcp emphasizing specific pages via page_config.",
+    "prompt": "Make a demo for arxiv-mcp but spend more time on the pages that matter and skip the boring ones.",
+    "tool": "demo_vid_generate",
+    "arguments": {
+      "repo": "arxiv-mcp",
+      "page_config": {
+        "dashboard": "detail",
+        "settings": "skip"
+      }
+    }
+  },
+  {
+    "name": "generate_pageconfig_blender-mcp",
+    "description": "Generate a video for blender-mcp emphasizing specific pages via page_config.",
+    "prompt": "Make a demo for blender-mcp but spend more time on the pages that matter and skip the boring ones.",
+    "tool": "demo_vid_generate",
+    "arguments": {
+      "repo": "blender-mcp",
+      "page_config": {
+        "queue": "skip",
+        "logs": "skip"
+      }
+    }
+  },
+  {
+    "name": "generate_pageconfig_stripe-mcp",
+    "description": "Generate a video for stripe-mcp emphasizing specific pages via page_config.",
+    "prompt": "Make a demo for stripe-mcp but spend more time on the pages that matter and skip the boring ones.",
+    "tool": "demo_vid_generate",
+    "arguments": {
+      "repo": "stripe-mcp",
+      "page_config": {
+        "depot": "detail",
+        "generate": "detail"
+      }
+    }
+  },
+  {
+    "name": "generate_pageconfig_norirobotics-mcp",
+    "description": "Generate a video for norirobotics-mcp emphasizing specific pages via page_config.",
+    "prompt": "Make a demo for norirobotics-mcp but spend more time on the pages that matter and skip the boring ones.",
+    "tool": "demo_vid_generate",
+    "arguments": {
+      "repo": "norirobotics-mcp",
+      "page_config": {
+        "chat": "skip",
+        "music": "detail"
+      }
+    }
+  },
+  {
+    "name": "generate_pageconfig_resonite-mcp",
+    "description": "Generate a video for resonite-mcp emphasizing specific pages via page_config.",
+    "prompt": "Make a demo for resonite-mcp but spend more time on the pages that matter and skip the boring ones.",
+    "tool": "demo_vid_generate",
+    "arguments": {
+      "repo": "resonite-mcp",
+      "page_config": {
+        "speech": "detail",
+        "settings": "skip",
+        "logs": "skip"
+      }
+    }
+  },
+  {
+    "name": "generate_music_arxiv-mcp",
+    "description": "Generate a video for arxiv-mcp with background music enabled.",
+    "prompt": "Create a demo video for arxiv-mcp with some upbeat background music under the narration.",
+    "tool": "demo_vid_generate",
+    "arguments": {
+      "repo": "arxiv-mcp",
+      "music_enabled": true,
+      "music_prompt": "upbeat lo-fi electronic, minimal drums, background-friendly"
+    }
+  },
+  {
+    "name": "generate_music_blender-mcp",
+    "description": "Generate a video for blender-mcp with background music enabled.",
+    "prompt": "Create a demo video for blender-mcp with some upbeat background music under the narration.",
+    "tool": "demo_vid_generate",
+    "arguments": {
+      "repo": "blender-mcp",
+      "music_enabled": true,
+      "music_prompt": "upbeat lo-fi electronic, minimal drums, background-friendly"
+    }
+  },
+  {
+    "name": "generate_music_stripe-mcp",
+    "description": "Generate a video for stripe-mcp with background music enabled.",
+    "prompt": "Create a demo video for stripe-mcp with some upbeat background music under the narration.",
+    "tool": "demo_vid_generate",
+    "arguments": {
+      "repo": "stripe-mcp",
+      "music_enabled": true,
+      "music_prompt": "upbeat lo-fi electronic, minimal drums, background-friendly"
+    }
+  },
+  {
+    "name": "generate_music_norirobotics-mcp",
+    "description": "Generate a video for norirobotics-mcp with background music enabled.",
+    "prompt": "Create a demo video for norirobotics-mcp with some upbeat background music under the narration.",
+    "tool": "demo_vid_generate",
+    "arguments": {
+      "repo": "norirobotics-mcp",
+      "music_enabled": true,
+      "music_prompt": "upbeat lo-fi electronic, minimal drums, background-friendly"
+    }
+  },
+  {
+    "name": "generate_music_resonite-mcp",
+    "description": "Generate a video for resonite-mcp with background music enabled.",
+    "prompt": "Create a demo video for resonite-mcp with some upbeat background music under the narration.",
+    "tool": "demo_vid_generate",
+    "arguments": {
+      "repo": "resonite-mcp",
+      "music_enabled": true,
+      "music_prompt": "upbeat lo-fi electronic, minimal drums, background-friendly"
+    }
+  },
+  {
+    "name": "generate_music_chess-mcp",
+    "description": "Generate a video for chess-mcp with background music enabled.",
+    "prompt": "Create a demo video for chess-mcp with some upbeat background music under the narration.",
+    "tool": "demo_vid_generate",
+    "arguments": {
+      "repo": "chess-mcp",
+      "music_enabled": true,
+      "music_prompt": "upbeat lo-fi electronic, minimal drums, background-friendly"
+    }
+  },
+  {
+    "name": "generate_music_custom_obsidian-mcp",
+    "description": "Generate a video for obsidian-mcp with a specific music mood prompt.",
+    "prompt": "Generate the obsidian-mcp demo with music that sounds ambient synth pads, slow tempo, calm and technical.",
+    "tool": "demo_vid_generate",
+    "arguments": {
+      "repo": "obsidian-mcp",
+      "music_enabled": true,
+      "music_prompt": "ambient synth pads, slow tempo, calm and technical"
+    }
+  },
+  {
+    "name": "generate_music_custom_discord-mcp",
+    "description": "Generate a video for discord-mcp with a specific music mood prompt.",
+    "prompt": "Generate the discord-mcp demo with music that sounds corporate tech, driving bass, confident and modern.",
+    "tool": "demo_vid_generate",
+    "arguments": {
+      "repo": "discord-mcp",
+      "music_enabled": true,
+      "music_prompt": "corporate tech, driving bass, confident and modern"
+    }
+  },
+  {
+    "name": "generate_music_custom_sfx-mcp",
+    "description": "Generate a video for sfx-mcp with a specific music mood prompt.",
+    "prompt": "Generate the sfx-mcp demo with music that sounds chiptune, playful, 8-bit inspired.",
+    "tool": "demo_vid_generate",
+    "arguments": {
+      "repo": "sfx-mcp",
+      "music_enabled": true,
+      "music_prompt": "chiptune, playful, 8-bit inspired"
+    }
+  },
+  {
+    "name": "generate_music_custom_songgeneration-mcp",
+    "description": "Generate a video for songgeneration-mcp with a specific music mood prompt.",
+    "prompt": "Generate the songgeneration-mcp demo with music that sounds cinematic orchestral swell, building tension.",
+    "tool": "demo_vid_generate",
+    "arguments": {
+      "repo": "songgeneration-mcp",
+      "music_enabled": true,
+      "music_prompt": "cinematic orchestral swell, building tension"
+    }
+  },
+  {
+    "name": "generate_baseurl_arxiv-mcp",
+    "description": "Generate a video for arxiv-mcp against an already-running instance at a custom base_url.",
+    "prompt": "The arxiv-mcp webapp is already running on a non-default port, at http://localhost:9220. Generate the demo video against that instance instead of auto-starting it.",
+    "tool": "demo_vid_generate",
+    "arguments": {
+      "repo": "arxiv-mcp",
+      "base_url": "http://localhost:9220"
+    }
+  },
+  {
+    "name": "generate_baseurl_blender-mcp",
+    "description": "Generate a video for blender-mcp against an already-running instance at a custom base_url.",
+    "prompt": "The blender-mcp webapp is already running on a non-default port, at http://localhost:9221. Generate the demo video against that instance instead of auto-starting it.",
+    "tool": "demo_vid_generate",
+    "arguments": {
+      "repo": "blender-mcp",
+      "base_url": "http://localhost:9221"
+    }
+  },
+  {
+    "name": "generate_baseurl_stripe-mcp",
+    "description": "Generate a video for stripe-mcp against an already-running instance at a custom base_url.",
+    "prompt": "The stripe-mcp webapp is already running on a non-default port, at http://localhost:9222. Generate the demo video against that instance instead of auto-starting it.",
+    "tool": "demo_vid_generate",
+    "arguments": {
+      "repo": "stripe-mcp",
+      "base_url": "http://localhost:9222"
+    }
+  },
+  {
+    "name": "generate_baseurl_norirobotics-mcp",
+    "description": "Generate a video for norirobotics-mcp against an already-running instance at a custom base_url.",
+    "prompt": "The norirobotics-mcp webapp is already running on a non-default port, at http://localhost:9223. Generate the demo video against that instance instead of auto-starting it.",
+    "tool": "demo_vid_generate",
+    "arguments": {
+      "repo": "norirobotics-mcp",
+      "base_url": "http://localhost:9223"
+    }
+  },
+  {
+    "name": "generate_theme_light_arxiv-mcp",
+    "description": "Generate a video for arxiv-mcp using the light theme instead of the default dark theme.",
+    "prompt": "Make a demo for arxiv-mcp but use the light theme so it matches our light-mode marketing screenshots.",
+    "tool": "demo_vid_generate",
+    "arguments": {
+      "repo": "arxiv-mcp",
+      "theme": "light"
+    }
+  },
+  {
+    "name": "generate_theme_light_blender-mcp",
+    "description": "Generate a video for blender-mcp using the light theme instead of the default dark theme.",
+    "prompt": "Make a demo for blender-mcp but use the light theme so it matches our light-mode marketing screenshots.",
+    "tool": "demo_vid_generate",
+    "arguments": {
+      "repo": "blender-mcp",
+      "theme": "light"
+    }
+  },
+  {
+    "name": "generate_theme_light_stripe-mcp",
+    "description": "Generate a video for stripe-mcp using the light theme instead of the default dark theme.",
+    "prompt": "Make a demo for stripe-mcp but use the light theme so it matches our light-mode marketing screenshots.",
+    "tool": "demo_vid_generate",
+    "arguments": {
+      "repo": "stripe-mcp",
+      "theme": "light"
+    }
+  },
+  {
+    "name": "generate_scriptyaml_speech-mcp",
+    "description": "Generate a video for speech-mcp from a hand-written narration script instead of auto-drafting one.",
+    "prompt": "I already wrote a narration script for speech-mcp, here it is as YAML — generate the video from exactly this script rather than drafting a new one.",
+    "tool": "demo_vid_generate",
+    "arguments": {
+      "repo": "speech-mcp",
+      "script_yaml": "voice: heart\nsteps:\n  - action: goto\n    url: /\n    say: \"Welcome to the dashboard.\"\n    wait: 3\n  - action: click\n    selector: '[data-testid=\"nav-settings\"]'\n    say: \"Here's the settings page.\"\n    wait: 2\n  - action: end\n"
+    }
+  },
+  {
+    "name": "generate_scriptyaml_vfx-mcp",
+    "description": "Generate a video for vfx-mcp from a hand-written narration script instead of auto-drafting one.",
+    "prompt": "I already wrote a narration script for vfx-mcp, here it is as YAML — generate the video from exactly this script rather than drafting a new one.",
+    "tool": "demo_vid_generate",
+    "arguments": {
+      "repo": "vfx-mcp",
+      "script_yaml": "voice: heart\nsteps:\n  - action: goto\n    url: /\n    say: \"Welcome to the dashboard.\"\n    wait: 3\n  - action: click\n    selector: '[data-testid=\"nav-settings\"]'\n    say: \"Here's the settings page.\"\n    wait: 2\n  - action: end\n"
+    }
+  },
+  {
+    "name": "generate_scriptyaml_winops-mcp",
+    "description": "Generate a video for winops-mcp from a hand-written narration script instead of auto-drafting one.",
+    "prompt": "I already wrote a narration script for winops-mcp, here it is as YAML — generate the video from exactly this script rather than drafting a new one.",
+    "tool": "demo_vid_generate",
+    "arguments": {
+      "repo": "winops-mcp",
+      "script_yaml": "voice: heart\nsteps:\n  - action: goto\n    url: /\n    say: \"Welcome to the dashboard.\"\n    wait: 3\n  - action: click\n    selector: '[data-testid=\"nav-settings\"]'\n    say: \"Here's the settings page.\"\n    wait: 2\n  - action: end\n"
+    }
+  },
+  {
+    "name": "generate_desktop_capture_gitops-mcp",
+    "description": "Generate a video for gitops-mcp by capturing a native desktop window instead of a browser page.",
+    "prompt": "gitops-mcp is a native Windows app, not a webapp — record the demo by capturing its window directly instead of trying to load it as a URL.",
+    "tool": "demo_vid_generate",
+    "arguments": {
+      "repo": "gitops-mcp",
+      "script_yaml": "voice: sky\nsteps:\n  - action: capture_window\n    window_title: \"gitops-mcp\"\n    say: \"Here's the native application in action.\"\n    wait: 4\n  - action: end\n"
+    }
+  },
+  {
+    "name": "generate_desktop_capture_fileops-mcp",
+    "description": "Generate a video for fileops-mcp by capturing a native desktop window instead of a browser page.",
+    "prompt": "fileops-mcp is a native Windows app, not a webapp — record the demo by capturing its window directly instead of trying to load it as a URL.",
+    "tool": "demo_vid_generate",
+    "arguments": {
+      "repo": "fileops-mcp",
+      "script_yaml": "voice: sky\nsteps:\n  - action: capture_window\n    window_title: \"fileops-mcp\"\n    say: \"Here's the native application in action.\"\n    wait: 4\n  - action: end\n"
+    }
+  },
+  {
+    "name": "generate_desktop_capture_memops-mcp",
+    "description": "Generate a video for memops-mcp by capturing a native desktop window instead of a browser page.",
+    "prompt": "memops-mcp is a native Windows app, not a webapp — record the demo by capturing its window directly instead of trying to load it as a URL.",
+    "tool": "demo_vid_generate",
+    "arguments": {
+      "repo": "memops-mcp",
+      "script_yaml": "voice: sky\nsteps:\n  - action: capture_window\n    window_title: \"memops-mcp\"\n    say: \"Here's the native application in action.\"\n    wait: 4\n  - action: end\n"
+    }
+  },
+  {
+    "name": "generate_transitions_sfx_photoshop-mcp",
+    "description": "Generate a video for photoshop-mcp with explicit transition and sound-effect steps in the script.",
+    "prompt": "Write a demo for photoshop-mcp that has a proper wipe transition between the dashboard and settings pages, with a click sound effect on the settings click.",
+    "tool": "demo_vid_generate",
+    "arguments": {
+      "repo": "photoshop-mcp",
+      "script_yaml": "voice: heart\nsteps:\n  - action: goto\n    url: /\n    say: \"This is the dashboard.\"\n    wait: 3\n  - action: sfx\n    prompt: \"soft ui click\"\n  - action: click\n    selector: '[data-testid=\"nav-settings\"]'\n    wait: 1\n  - action: transition\n    style: wipe\n  - action: text_overlay\n    text: \"Settings\"\n    say: \"And here's where you configure everything.\"\n    wait: 3\n  - action: end\n"
+    }
+  },
+  {
+    "name": "generate_transitions_sfx_figma-mcp",
+    "description": "Generate a video for figma-mcp with explicit transition and sound-effect steps in the script.",
+    "prompt": "Write a demo for figma-mcp that has a proper wipe transition between the dashboard and settings pages, with a click sound effect on the settings click.",
+    "tool": "demo_vid_generate",
+    "arguments": {
+      "repo": "figma-mcp",
+      "script_yaml": "voice: heart\nsteps:\n  - action: goto\n    url: /\n    say: \"This is the dashboard.\"\n    wait: 3\n  - action: sfx\n    prompt: \"soft ui click\"\n  - action: click\n    selector: '[data-testid=\"nav-settings\"]'\n    wait: 1\n  - action: transition\n    style: wipe\n  - action: text_overlay\n    text: \"Settings\"\n    say: \"And here's where you configure everything.\"\n    wait: 3\n  - action: end\n"
+    }
+  },
+  {
+    "name": "generate_transitions_sfx_docker-mcp",
+    "description": "Generate a video for docker-mcp with explicit transition and sound-effect steps in the script.",
+    "prompt": "Write a demo for docker-mcp that has a proper wipe transition between the dashboard and settings pages, with a click sound effect on the settings click.",
+    "tool": "demo_vid_generate",
+    "arguments": {
+      "repo": "docker-mcp",
+      "script_yaml": "voice: heart\nsteps:\n  - action: goto\n    url: /\n    say: \"This is the dashboard.\"\n    wait: 3\n  - action: sfx\n    prompt: \"soft ui click\"\n  - action: click\n    selector: '[data-testid=\"nav-settings\"]'\n    wait: 1\n  - action: transition\n    style: wipe\n  - action: text_overlay\n    text: \"Settings\"\n    say: \"And here's where you configure everything.\"\n    wait: 3\n  - action: end\n"
+    }
+  },
+  {
+    "name": "generate_obs_scene",
+    "description": "Generate a video that switches OBS scenes as part of the recording, for a hybrid screen-capture setup.",
+    "prompt": "For this one I want the recording to switch between two OBS scenes partway through — one for the browser and one for a terminal overlay.",
+    "tool": "demo_vid_generate",
+    "arguments": {
+      "repo": "winops-mcp",
+      "script_yaml": "voice: adam\nsteps:\n  - action: obs_scene\n    scene: \"Browser\"\n  - action: goto\n    url: /\n    say: \"Let's start in the webapp.\"\n    wait: 3\n  - action: obs_scene\n    scene: \"Terminal\"\n  - action: say\n    say: \"Now let's look at the same operation from the command line.\"\n    wait: 3\n  - action: end\n"
+    }
+  },
+  {
+    "name": "generate_mcp_call_step",
+    "description": "Generate a video whose script includes an mcp_call step that invokes another MCP tool mid-recording to change backend state before continuing.",
+    "prompt": "The demo needs to actually create a real record via an MCP tool call partway through the recording, then show the UI reflecting it.",
+    "tool": "demo_vid_generate",
+    "arguments": {
+      "repo": "postgres-mcp",
+      "script_yaml": "voice: nicole\nsteps:\n  - action: goto\n    url: /\n    say: \"Right now the table is empty.\"\n    wait: 2\n  - action: mcp_call\n    server: postgres-mcp\n    tool: insert_row\n    arguments: {table: \"demo\", values: {\"name\": \"example\"}}\n  - action: goto\n    url: /\n    say: \"And now the new row shows up.\"\n    wait: 3\n  - action: end\n"
+    }
+  },
+  {
+    "name": "generate_missing_repo_error",
+    "description": "Attempt to generate a video for a repo path that doesn't exist, to see the resulting error.",
+    "prompt": "Generate a demo video for a repo called 'totally-made-up-repo' that doesn't actually exist on disk.",
+    "tool": "demo_vid_generate",
+    "arguments": {
+      "repo": "totally-made-up-repo"
+    }
+  },
+  {
+    "name": "generate_vertical_short",
+    "description": "Generate a 9:16 vertical video for a repo, sized for a short-form video platform.",
+    "prompt": "I need a vertical short-form video for chess-mcp, like something you'd post as a Reel or Short.",
+    "tool": "demo_vid_generate",
+    "arguments": {
+      "repo": "chess-mcp",
+      "aspect_ratio": "9:16",
+      "resolution": "1080p"
+    }
+  },
+  {
+    "name": "generate_square_social",
+    "description": "Generate a 1:1 square video for a repo for a social media feed post.",
+    "prompt": "Generate a square-format demo for obsidian-mcp for an Instagram feed post.",
+    "tool": "demo_vid_generate",
+    "arguments": {
+      "repo": "obsidian-mcp",
+      "aspect_ratio": "1:1"
+    }
+  },
+  {
+    "name": "generate_full_customization",
+    "description": "Generate a video combining nearly every optional parameter: custom voice, aspect ratio, resolution, page_config, and music together.",
+    "prompt": "I want the works for this one: sky voice, 1080p, 16:9, only show the dashboard and generate pages in detail, and add some calm background music.",
+    "tool": "demo_vid_generate",
+    "arguments": {
+      "repo": "figma-mcp",
+      "voice": "sky",
+      "aspect_ratio": "16:9",
+      "resolution": "1080p",
+      "page_config": {
+        "dashboard": "detail",
+        "generate": "detail",
+        "logs": "skip",
+        "settings": "skip"
+      },
+      "music_enabled": true,
+      "music_prompt": "calm ambient pads, unobtrusive, professional"
+    }
+  },
+  {
+    "name": "list_pages_arxiv-mcp",
+    "description": "List the webapp pages demo-vid-mcp knows about for arxiv-mcp, with their default Skip/Show/Detail treatment.",
+    "prompt": "Before I generate a video for arxiv-mcp, show me what pages it has and how each one would be treated by default.",
+    "tool": "demo_vid_list_pages",
+    "arguments": {
+      "repo": "arxiv-mcp"
+    }
+  },
+  {
+    "name": "list_pages_blender-mcp",
+    "description": "List the webapp pages demo-vid-mcp knows about for blender-mcp, with their default Skip/Show/Detail treatment.",
+    "prompt": "Before I generate a video for blender-mcp, show me what pages it has and how each one would be treated by default.",
+    "tool": "demo_vid_list_pages",
+    "arguments": {
+      "repo": "blender-mcp"
+    }
+  },
+  {
+    "name": "list_pages_stripe-mcp",
+    "description": "List the webapp pages demo-vid-mcp knows about for stripe-mcp, with their default Skip/Show/Detail treatment.",
+    "prompt": "Before I generate a video for stripe-mcp, show me what pages it has and how each one would be treated by default.",
+    "tool": "demo_vid_list_pages",
+    "arguments": {
+      "repo": "stripe-mcp"
+    }
+  },
+  {
+    "name": "list_pages_norirobotics-mcp",
+    "description": "List the webapp pages demo-vid-mcp knows about for norirobotics-mcp, with their default Skip/Show/Detail treatment.",
+    "prompt": "Before I generate a video for norirobotics-mcp, show me what pages it has and how each one would be treated by default.",
+    "tool": "demo_vid_list_pages",
+    "arguments": {
+      "repo": "norirobotics-mcp"
+    }
+  },
+  {
+    "name": "list_pages_resonite-mcp",
+    "description": "List the webapp pages demo-vid-mcp knows about for resonite-mcp, with their default Skip/Show/Detail treatment.",
+    "prompt": "Before I generate a video for resonite-mcp, show me what pages it has and how each one would be treated by default.",
+    "tool": "demo_vid_list_pages",
+    "arguments": {
+      "repo": "resonite-mcp"
+    }
+  },
+  {
+    "name": "list_pages_chess-mcp",
+    "description": "List the webapp pages demo-vid-mcp knows about for chess-mcp, with their default Skip/Show/Detail treatment.",
+    "prompt": "Before I generate a video for chess-mcp, show me what pages it has and how each one would be treated by default.",
+    "tool": "demo_vid_list_pages",
+    "arguments": {
+      "repo": "chess-mcp"
+    }
+  },
+  {
+    "name": "list_pages_obsidian-mcp",
+    "description": "List the webapp pages demo-vid-mcp knows about for obsidian-mcp, with their default Skip/Show/Detail treatment.",
+    "prompt": "Before I generate a video for obsidian-mcp, show me what pages it has and how each one would be treated by default.",
+    "tool": "demo_vid_list_pages",
+    "arguments": {
+      "repo": "obsidian-mcp"
+    }
+  },
+  {
+    "name": "list_pages_discord-mcp",
+    "description": "List the webapp pages demo-vid-mcp knows about for discord-mcp, with their default Skip/Show/Detail treatment.",
+    "prompt": "Before I generate a video for discord-mcp, show me what pages it has and how each one would be treated by default.",
+    "tool": "demo_vid_list_pages",
+    "arguments": {
+      "repo": "discord-mcp"
+    }
+  },
+  {
+    "name": "list_pages_sfx-mcp",
+    "description": "List the webapp pages demo-vid-mcp knows about for sfx-mcp, with their default Skip/Show/Detail treatment.",
+    "prompt": "Before I generate a video for sfx-mcp, show me what pages it has and how each one would be treated by default.",
+    "tool": "demo_vid_list_pages",
+    "arguments": {
+      "repo": "sfx-mcp"
+    }
+  },
+  {
+    "name": "list_pages_songgeneration-mcp",
+    "description": "List the webapp pages demo-vid-mcp knows about for songgeneration-mcp, with their default Skip/Show/Detail treatment.",
+    "prompt": "Before I generate a video for songgeneration-mcp, show me what pages it has and how each one would be treated by default.",
+    "tool": "demo_vid_list_pages",
+    "arguments": {
+      "repo": "songgeneration-mcp"
+    }
+  },
+  {
+    "name": "script_draft_arxiv-mcp",
+    "description": "Draft a narration script for arxiv-mcp from its README without generating a video yet.",
+    "prompt": "Draft a narration script for arxiv-mcp so I can review the wording before we spend time recording anything.",
+    "tool": "demo_vid_script_draft",
+    "arguments": {
+      "repo": "arxiv-mcp"
+    }
+  },
+  {
+    "name": "script_draft_blender-mcp",
+    "description": "Draft a narration script for blender-mcp from its README without generating a video yet.",
+    "prompt": "Draft a narration script for blender-mcp so I can review the wording before we spend time recording anything.",
+    "tool": "demo_vid_script_draft",
+    "arguments": {
+      "repo": "blender-mcp"
+    }
+  },
+  {
+    "name": "script_draft_stripe-mcp",
+    "description": "Draft a narration script for stripe-mcp from its README without generating a video yet.",
+    "prompt": "Draft a narration script for stripe-mcp so I can review the wording before we spend time recording anything.",
+    "tool": "demo_vid_script_draft",
+    "arguments": {
+      "repo": "stripe-mcp"
+    }
+  },
+  {
+    "name": "script_draft_norirobotics-mcp",
+    "description": "Draft a narration script for norirobotics-mcp from its README without generating a video yet.",
+    "prompt": "Draft a narration script for norirobotics-mcp so I can review the wording before we spend time recording anything.",
+    "tool": "demo_vid_script_draft",
+    "arguments": {
+      "repo": "norirobotics-mcp"
+    }
+  },
+  {
+    "name": "script_draft_resonite-mcp",
+    "description": "Draft a narration script for resonite-mcp from its README without generating a video yet.",
+    "prompt": "Draft a narration script for resonite-mcp so I can review the wording before we spend time recording anything.",
+    "tool": "demo_vid_script_draft",
+    "arguments": {
+      "repo": "resonite-mcp"
+    }
+  },
+  {
+    "name": "script_draft_chess-mcp",
+    "description": "Draft a narration script for chess-mcp from its README without generating a video yet.",
+    "prompt": "Draft a narration script for chess-mcp so I can review the wording before we spend time recording anything.",
+    "tool": "demo_vid_script_draft",
+    "arguments": {
+      "repo": "chess-mcp"
+    }
+  },
+  {
+    "name": "script_draft_pageconfig_obsidian-mcp",
+    "description": "Draft a narration script for obsidian-mcp using a specific page_config, without generating yet.",
+    "prompt": "Draft the obsidian-mcp script but only include the dashboard and settings pages in detail, skip the rest.",
+    "tool": "demo_vid_script_draft",
+    "arguments": {
+      "repo": "obsidian-mcp",
+      "page_config": {
+        "dashboard": "detail",
+        "settings": "detail"
+      }
+    }
+  },
+  {
+    "name": "script_draft_pageconfig_discord-mcp",
+    "description": "Draft a narration script for discord-mcp using a specific page_config, without generating yet.",
+    "prompt": "Draft the discord-mcp script but only include the dashboard and settings pages in detail, skip the rest.",
+    "tool": "demo_vid_script_draft",
+    "arguments": {
+      "repo": "discord-mcp",
+      "page_config": {
+        "dashboard": "detail",
+        "settings": "detail"
+      }
+    }
+  },
+  {
+    "name": "script_draft_pageconfig_sfx-mcp",
+    "description": "Draft a narration script for sfx-mcp using a specific page_config, without generating yet.",
+    "prompt": "Draft the sfx-mcp script but only include the dashboard and settings pages in detail, skip the rest.",
+    "tool": "demo_vid_script_draft",
+    "arguments": {
+      "repo": "sfx-mcp",
+      "page_config": {
+        "dashboard": "detail",
+        "settings": "detail"
+      }
+    }
+  },
+  {
+    "name": "script_draft_pageconfig_songgeneration-mcp",
+    "description": "Draft a narration script for songgeneration-mcp using a specific page_config, without generating yet.",
+    "prompt": "Draft the songgeneration-mcp script but only include the dashboard and settings pages in detail, skip the rest.",
+    "tool": "demo_vid_script_draft",
+    "arguments": {
+      "repo": "songgeneration-mcp",
+      "page_config": {
+        "dashboard": "detail",
+        "settings": "detail"
+      }
+    }
+  },
+  {
+    "name": "validate_good_script",
+    "description": "Validate a well-formed narration script before running it, expecting a clean pass.",
+    "prompt": "I hand-wrote this narration script — can you validate it before I run a full generation?",
+    "tool": "demo_vid_script_validate",
+    "arguments": {
+      "script_yaml": "voice: heart\nsteps:\n  - action: goto\n    url: /\n    say: \"Welcome.\"\n    wait: 3\n  - action: end\n"
+    }
+  },
+  {
+    "name": "validate_bad_action_type",
+    "description": "Validate a script that uses an action type the pipeline doesn't recognize, expecting a validation error.",
+    "prompt": "Check whether this script is valid — I'm not sure 'teleport' is a real step action.",
+    "tool": "demo_vid_script_validate",
+    "arguments": {
+      "script_yaml": "voice: heart\nsteps:\n  - action: teleport\n    url: /\n    wait: 3\n"
+    }
+  },
+  {
+    "name": "validate_negative_wait",
+    "description": "Validate a script with a negative wait duration, expecting a validation error about timing.",
+    "prompt": "Validate this script — I think I typed the wait value wrong.",
+    "tool": "demo_vid_script_validate",
+    "arguments": {
+      "script_yaml": "voice: heart\nsteps:\n  - action: goto\n    url: /\n    wait: -2\n  - action: end\n"
+    }
+  },
+  {
+    "name": "validate_missing_end_step",
+    "description": "Validate a script that never has a final 'end' step, expecting a structural warning or error.",
+    "prompt": "Does this script look complete? I want to make sure I didn't forget anything before generating.",
+    "tool": "demo_vid_script_validate",
+    "arguments": {
+      "script_yaml": "voice: heart\nsteps:\n  - action: goto\n    url: /\n    say: \"Hello.\"\n    wait: 2\n"
+    }
+  },
+  {
+    "name": "validate_drafted_arxiv-mcp",
+    "description": "Validate a script for arxiv-mcp that was drafted, then hand-edited, before committing to a full generation.",
+    "prompt": "I drafted a script for arxiv-mcp and tweaked a couple of the narration lines — validate my edited version before I generate.",
+    "tool": "demo_vid_script_validate",
+    "arguments": {
+      "script_yaml": "voice: heart\nsteps:\n  - action: goto\n    url: /\n    say: \"Welcome to arxiv-mcp.\"\n    wait: 3\n  - action: end\n"
+    }
+  },
+  {
+    "name": "validate_drafted_blender-mcp",
+    "description": "Validate a script for blender-mcp that was drafted, then hand-edited, before committing to a full generation.",
+    "prompt": "I drafted a script for blender-mcp and tweaked a couple of the narration lines — validate my edited version before I generate.",
+    "tool": "demo_vid_script_validate",
+    "arguments": {
+      "script_yaml": "voice: heart\nsteps:\n  - action: goto\n    url: /\n    say: \"Welcome to blender-mcp.\"\n    wait: 3\n  - action: end\n"
+    }
+  },
+  {
+    "name": "validate_drafted_stripe-mcp",
+    "description": "Validate a script for stripe-mcp that was drafted, then hand-edited, before committing to a full generation.",
+    "prompt": "I drafted a script for stripe-mcp and tweaked a couple of the narration lines — validate my edited version before I generate.",
+    "tool": "demo_vid_script_validate",
+    "arguments": {
+      "script_yaml": "voice: heart\nsteps:\n  - action: goto\n    url: /\n    say: \"Welcome to stripe-mcp.\"\n    wait: 3\n  - action: end\n"
+    }
+  },
+  {
+    "name": "validate_drafted_norirobotics-mcp",
+    "description": "Validate a script for norirobotics-mcp that was drafted, then hand-edited, before committing to a full generation.",
+    "prompt": "I drafted a script for norirobotics-mcp and tweaked a couple of the narration lines — validate my edited version before I generate.",
+    "tool": "demo_vid_script_validate",
+    "arguments": {
+      "script_yaml": "voice: heart\nsteps:\n  - action: goto\n    url: /\n    say: \"Welcome to norirobotics-mcp.\"\n    wait: 3\n  - action: end\n"
+    }
+  },
+  {
+    "name": "validate_drafted_resonite-mcp",
+    "description": "Validate a script for resonite-mcp that was drafted, then hand-edited, before committing to a full generation.",
+    "prompt": "I drafted a script for resonite-mcp and tweaked a couple of the narration lines — validate my edited version before I generate.",
+    "tool": "demo_vid_script_validate",
+    "arguments": {
+      "script_yaml": "voice: heart\nsteps:\n  - action: goto\n    url: /\n    say: \"Welcome to resonite-mcp.\"\n    wait: 3\n  - action: end\n"
+    }
+  },
+  {
+    "name": "validate_drafted_chess-mcp",
+    "description": "Validate a script for chess-mcp that was drafted, then hand-edited, before committing to a full generation.",
+    "prompt": "I drafted a script for chess-mcp and tweaked a couple of the narration lines — validate my edited version before I generate.",
+    "tool": "demo_vid_script_validate",
+    "arguments": {
+      "script_yaml": "voice: heart\nsteps:\n  - action: goto\n    url: /\n    say: \"Welcome to chess-mcp.\"\n    wait: 3\n  - action: end\n"
+    }
+  },
+  {
+    "name": "list_all_videos",
+    "description": "List every video demo-vid-mcp has produced so far, across all repos.",
+    "prompt": "What videos have we already generated?",
+    "tool": "demo_vid_list",
+    "arguments": {}
+  },
+  {
+    "name": "list_videos_for_arxiv-mcp",
+    "description": "List only the videos produced for arxiv-mcp.",
+    "prompt": "Have we already made a demo video for arxiv-mcp? Show me what exists.",
+    "tool": "demo_vid_list",
+    "arguments": {
+      "repo": "arxiv-mcp"
+    }
+  },
+  {
+    "name": "list_videos_for_blender-mcp",
+    "description": "List only the videos produced for blender-mcp.",
+    "prompt": "Have we already made a demo video for blender-mcp? Show me what exists.",
+    "tool": "demo_vid_list",
+    "arguments": {
+      "repo": "blender-mcp"
+    }
+  },
+  {
+    "name": "list_videos_for_stripe-mcp",
+    "description": "List only the videos produced for stripe-mcp.",
+    "prompt": "Have we already made a demo video for stripe-mcp? Show me what exists.",
+    "tool": "demo_vid_list",
+    "arguments": {
+      "repo": "stripe-mcp"
+    }
+  },
+  {
+    "name": "list_videos_for_norirobotics-mcp",
+    "description": "List only the videos produced for norirobotics-mcp.",
+    "prompt": "Have we already made a demo video for norirobotics-mcp? Show me what exists.",
+    "tool": "demo_vid_list",
+    "arguments": {
+      "repo": "norirobotics-mcp"
+    }
+  },
+  {
+    "name": "list_videos_for_resonite-mcp",
+    "description": "List only the videos produced for resonite-mcp.",
+    "prompt": "Have we already made a demo video for resonite-mcp? Show me what exists.",
+    "tool": "demo_vid_list",
+    "arguments": {
+      "repo": "resonite-mcp"
+    }
+  },
+  {
+    "name": "list_videos_empty_repo",
+    "description": "List videos for a repo that has never had one generated, expecting an empty result.",
+    "prompt": "Do we have any videos yet for postgres-mcp?",
+    "tool": "demo_vid_list",
+    "arguments": {
+      "repo": "postgres-mcp"
+    }
+  },
+  {
+    "name": "list_videos_check_before_regenerate",
+    "description": "List videos for a repo to check the existing narration.yaml before deciding whether to refine or regenerate from scratch.",
+    "prompt": "Before I ask for changes, show me what's already saved for arxiv-mcp so I know what we're starting from.",
+    "tool": "demo_vid_list",
+    "arguments": {
+      "repo": "arxiv-mcp"
+    }
+  },
+  {
+    "name": "refine_chitchat_increase_w",
+    "description": "Apply pattern-based feedback to the saved chitchat video and regenerate it in one call.",
+    "prompt": "Slow the pacing down and switch to the sky voice for the chitchat demo.",
+    "tool": "demo_vid_refine",
+    "arguments": {
+      "video_name": "chitchat",
+      "feedback": "increase wait to 4 seconds and voice to sky"
+    }
+  },
+  {
+    "name": "refine_arxiv_mcp_wait_to_3",
+    "description": "Apply pattern-based feedback to the saved arxiv-mcp video and regenerate it in one call.",
+    "prompt": "The arxiv-mcp video feels rushed, slow every step down to 3 seconds.",
+    "tool": "demo_vid_refine",
+    "arguments": {
+      "video_name": "arxiv-mcp",
+      "feedback": "wait to 3"
+    }
+  },
+  {
+    "name": "refine_blender_mcp_voice_to_b",
+    "description": "Apply pattern-based feedback to the saved blender-mcp video and regenerate it in one call.",
+    "prompt": "Switch the blender-mcp narration to the bella voice.",
+    "tool": "demo_vid_refine",
+    "arguments": {
+      "video_name": "blender-mcp",
+      "feedback": "voice to bella"
+    }
+  },
+  {
+    "name": "refine_stripe_mcp_timing_of_",
+    "description": "Apply pattern-based feedback to the saved stripe-mcp video and regenerate it in one call.",
+    "prompt": "Make every step in the stripe-mcp video linger for 5 seconds.",
+    "tool": "demo_vid_refine",
+    "arguments": {
+      "video_name": "stripe-mcp",
+      "feedback": "timing of 5"
+    }
+  },
+  {
+    "name": "refine_norirobotics_mcp_say_Let's",
+    "description": "Apply pattern-based feedback to the saved norirobotics-mcp video and regenerate it in one call.",
+    "prompt": "Change the last line of narration in the norirobotics-mcp video to something about the robotics dashboard.",
+    "tool": "demo_vid_refine",
+    "arguments": {
+      "video_name": "norirobotics-mcp",
+      "feedback": "say: Let's take a closer look at the robotics dashboard."
+    }
+  },
+  {
+    "name": "refine_resonite_mcp_narrate_T",
+    "description": "Apply pattern-based feedback to the saved resonite-mcp video and regenerate it in one call.",
+    "prompt": "Update the last narration line on the resonite-mcp video.",
+    "tool": "demo_vid_refine",
+    "arguments": {
+      "video_name": "resonite-mcp",
+      "feedback": "narrate: This is the final overview screen."
+    }
+  },
+  {
+    "name": "refine_chess_mcp_add_step",
+    "description": "Apply pattern-based feedback to the saved chess-mcp video and regenerate it in one call.",
+    "prompt": "Append one more placeholder step to the end of the chess-mcp video's script so I can fill it in by hand.",
+    "tool": "demo_vid_refine",
+    "arguments": {
+      "video_name": "chess-mcp",
+      "feedback": "add step"
+    }
+  },
+  {
+    "name": "refine_obsidian_mcp_pause_of_2",
+    "description": "Apply pattern-based feedback to the saved obsidian-mcp video and regenerate it in one call.",
+    "prompt": "The obsidian-mcp video is dragging, cut every wait down to 2 seconds.",
+    "tool": "demo_vid_refine",
+    "arguments": {
+      "video_name": "obsidian-mcp",
+      "feedback": "pause of 2"
+    }
+  },
+  {
+    "name": "refine_discord_mcp_voice__mi",
+    "description": "Apply pattern-based feedback to the saved discord-mcp video and regenerate it in one call.",
+    "prompt": "Change discord-mcp's narrator to michael.",
+    "tool": "demo_vid_refine",
+    "arguments": {
+      "video_name": "discord-mcp",
+      "feedback": "voice = michael"
+    }
+  },
+  {
+    "name": "refine_sfx_mcp_wait6",
+    "description": "Apply pattern-based feedback to the saved sfx-mcp video and regenerate it in one call.",
+    "prompt": "The sfx-mcp video needs to breathe more, stretch every step to 6 seconds.",
+    "tool": "demo_vid_refine",
+    "arguments": {
+      "video_name": "sfx-mcp",
+      "feedback": "wait=6"
+    }
+  },
+  {
+    "name": "refine_songgeneration_mcp_voice_to_'",
+    "description": "Apply pattern-based feedback to the saved songgeneration-mcp video and regenerate it in one call.",
+    "prompt": "Use sarah as the voice for songgeneration-mcp.",
+    "tool": "demo_vid_refine",
+    "arguments": {
+      "video_name": "songgeneration-mcp",
+      "feedback": "voice to 'sarah'"
+    }
+  },
+  {
+    "name": "refine_speech_mcp_append_ste",
+    "description": "Apply pattern-based feedback to the saved speech-mcp video and regenerate it in one call.",
+    "prompt": "Add a trailing step to the speech-mcp video.",
+    "tool": "demo_vid_refine",
+    "arguments": {
+      "video_name": "speech-mcp",
+      "feedback": "append step"
+    }
+  },
+  {
+    "name": "refine_vfx_mcp_timing_to_",
+    "description": "Apply pattern-based feedback to the saved vfx-mcp video and regenerate it in one call.",
+    "prompt": "Slow vfx-mcp down to 4 seconds per step and switch the narrator to george.",
+    "tool": "demo_vid_refine",
+    "arguments": {
+      "video_name": "vfx-mcp",
+      "feedback": "timing to 4 and voice to george"
+    }
+  },
+  {
+    "name": "refine_winops_mcp_wait_to_2,",
+    "description": "Apply pattern-based feedback to the saved winops-mcp video and regenerate it in one call.",
+    "prompt": "Speed winops-mcp up to 2 second waits and use the adam voice.",
+    "tool": "demo_vid_refine",
+    "arguments": {
+      "video_name": "winops-mcp",
+      "feedback": "wait to 2, voice to adam"
+    }
+  },
+  {
+    "name": "refine_gitops_mcp_pause_to_3",
+    "description": "Apply pattern-based feedback to the saved gitops-mcp video and regenerate it in one call.",
+    "prompt": "Give the gitops-mcp video 3 seconds of pause on every step.",
+    "tool": "demo_vid_refine",
+    "arguments": {
+      "video_name": "gitops-mcp",
+      "feedback": "pause to 3"
+    }
+  },
+  {
+    "name": "help_list_all_tools",
+    "description": "Ask for the full list of demo-vid-mcp tools and how to use them.",
+    "prompt": "What can demo-vid-mcp actually do? List the tools.",
+    "tool": "demo_vid_help",
+    "arguments": {}
+  },
+  {
+    "name": "help_first_time_orientation",
+    "description": "A first-time user asks demo-vid-mcp to explain itself before doing anything else.",
+    "prompt": "I've never used this server before, what does it do and where do I start?",
+    "tool": "demo_vid_help",
+    "arguments": {}
+  },
+  {
+    "name": "help_after_error",
+    "description": "After a confusing tool error, the user asks for a refresher on the tool surface.",
+    "prompt": "That didn't work the way I expected — remind me what tools exist and what they take.",
+    "tool": "demo_vid_help",
+    "arguments": {}
+  },
+  {
+    "name": "help_before_batch_run",
+    "description": "Before scripting a batch of many generations, the user checks the tool reference first.",
+    "prompt": "I'm about to generate videos for a dozen repos, quickly remind me of the exact tool signatures first.",
+    "tool": "demo_vid_help",
+    "arguments": {}
+  },
+  {
+    "name": "shutdown_after_batch",
+    "description": "Gracefully shut down the server and its background queue worker after a long batch-generation session.",
+    "prompt": "We're done generating for today, shut the server down cleanly.",
+    "tool": "demo_vid_shutdown",
+    "arguments": {}
+  },
+  {
+    "name": "shutdown_before_restart",
+    "description": "Shut down the server in order to restart it after a configuration change.",
+    "prompt": "I changed an environment variable, shut the server down so I can restart it with the new config.",
+    "tool": "demo_vid_shutdown",
+    "arguments": {}
+  },
+  {
+    "name": "shutdown_freeing_ports",
+    "description": "Shut down the server because its ports are needed by another process.",
+    "prompt": "I need port 11134 free for something else, shut down demo-vid-mcp.",
+    "tool": "demo_vid_shutdown",
+    "arguments": {}
+  },
+  {
+    "name": "shutdown_end_of_session",
+    "description": "Shut down cleanly at the end of a working session so no orphaned queue worker is left running.",
+    "prompt": "I'm wrapping up for the day, make sure the background queue worker gets shut down along with the server.",
+    "tool": "demo_vid_shutdown",
+    "arguments": {}
+  }
+]
