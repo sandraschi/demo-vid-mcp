@@ -314,8 +314,10 @@ async def demo_vid_generate(
     script_path.write_text(yaml.dump(script, default_flow_style=False), encoding="utf-8")
 
     if not desktop_mode:
-        # Pre-check: is the target webapp reachable? Try to start it if not.
-        first_url = script.get("steps", [{}])[0].get("url", "")
+        # Pre-check the first URL anywhere in the script, not just step 0: a
+        # tour can open with a text overlay and navigate later, and then the
+        # auto-start never ran (japanophile failed exactly this way).
+        first_url = next((s.get("url", "") for s in script.get("steps", []) if s.get("url")), "")
         if first_url:
             if not await _ensure_target_running(repo, first_url):
                 return {
@@ -362,7 +364,7 @@ async def demo_vid_generate(
                 align["old_total"],
                 align["new_total"],
             )
-            stages["voiceover"]["alignment"] = align
+            voice_result["alignment"] = align
             # Persist the aligned script - what was actually recorded.
             script_path.write_text(yaml.dump(script, default_flow_style=False), encoding="utf-8")
 

@@ -49,3 +49,15 @@ build-native:
 # Run the CUA smoke test against the installed NSIS app (install -> launch -> nav walk -> uninstall)
 cua-nsis-test:
     uv run python scripts/cua-smoke.py
+
+# Start the optional sfx/vfx engines (idempotent; ports already up are left alone)
+engines:
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/ensure-engines.ps1
+
+# Re-record a repo's demo video, then gate on voice/picture sync
+regen repo:
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/regen.ps1 -Repo {{repo}}
+
+# Check an already-produced video: SRT cue starts vs real speech onsets
+verify-sync repo:
+    {{UV}} run python scripts/check_sync.py --repo {{repo}}

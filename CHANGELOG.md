@@ -21,6 +21,15 @@ audio reached it at about 7.1 s.
   `stages.sfx` now state whether anything actually ran. On japanophile, vfx-mcp was not running
   on 11122 and the script had no `action: sfx` steps, so hard cuts and silence were correct
   behaviour for that run, not a rendering bug.
+- Automation: `just regen <repo>` runs engines -> generate -> sync gate, and
+  `just verify-sync <repo>` checks any existing video. `scripts/check_sync.py` compares SRT cue
+  starts against real speech onsets (FFmpeg silencedetect) and the bed length against the
+  picture; drift beyond 0.35 s fails. On the pre-fix japanophile video it reported up to -147 s
+  of drift and a 107 s short bed; the rebuilt video reports +0.121 s worst drift and passes.
+- `_ensure_target_running` now finds the first URL anywhere in the script. A tour that opens
+  with a text overlay never triggered the auto-start, so recording hit ERR_CONNECTION_REFUSED.
+  The alignment summary also no longer touches `stages["voiceover"]` before it exists (that
+  raised KeyError and a 500 on `/api/generate`).
 
 ## 0.4.0 (2026-09-11)
 
