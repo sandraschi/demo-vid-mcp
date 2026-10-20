@@ -401,3 +401,41 @@ def test_job_queue_persistence(tmp_path):
     canceled = q2.get_job(job["id"])
     assert canceled is not None
     assert canceled["status"] == "canceled"
+
+
+def test_page_gap_default_is_two_seconds():
+    """0.75x voice plus a 2s breathing room is the fleet default now."""
+    assert voiceover.PAGE_GAP_S == 2.0
+    script = {"steps": [{"say": "x", "wait": 3}]}
+    voiceover.align_script_waits(script, [3.0])
+    assert script["steps"][0]["wait"] == pytest.approx(5.0)
+
+
+def test_narration_timeline_aligns_lines_to_page_starts():
+    steps = [{"say": "one", "wait": 10}, {"wait": 3}, {"say": "two", "wait": 10}]
+    timeline = voiceover.narration_timeline(steps, [6.0, 6.0])
+    assert timeline["starts"] == [0.0, 13.0]
+    assert timeline["gaps"] == [7.0, 4.0]
+    assert timeline["total"] == 23.0
+    assert timeline["tight"] == 0
+
+
+def test_narration_timeline_flags_a_tight_gap():
+    steps = [{"say": "one", "wait": 1.0}, {"say": "two", "wait": 5.0}]
+    timeline = voiceover.narration_timeline(steps, [2.0, 1.0], min_gap=2.0)
+    assert timeline["gaps"][0] == 0.0
+    assert timeline["tight"] == 1
+
+
+def test_assemble_voiceover_matches_picture_length(tmp_path):
+    """The audio bed must be as long as the video, including hold steps."""
+    first = tmp_path / "a.wav"
+    second = tmp_path / "b.wav"
+    _write_test_wav(first, 1.0)
+    _write_test_wav(second, 1.0)
+    script = {"steps": [{"say": "one", "wait": 5}, {"wait": 2}, {"say": "two", "wait": 5}]}
+    voice = {"segment_paths": [str(first), str(second)], "segment_durations": [1.0, 1.0]}
+    out = voiceover.assemble_voiceover(voice, script, str(tmp_path))
+    assert out["timeline"]["starts"] == [0.0, 7.0]
+    assert out["total_duration"] == pytest.approx(12.0, abs=0.06)
+    assert out["timeline"]["overrun"] == 0.0

@@ -20,7 +20,12 @@ from demo_vid_mcp.pipeline.music import DEFAULT_MUSIC_PROMPT, generate_backgroun
 from demo_vid_mcp.pipeline.recorder import record
 from demo_vid_mcp.pipeline.script import default_script, validate_script
 from demo_vid_mcp.pipeline.sfx import resolve_all_sfx
-from demo_vid_mcp.pipeline.voiceover import align_script_waits, generate_voiceover
+from demo_vid_mcp.pipeline.voiceover import (
+    PAGE_GAP_S,
+    align_script_waits,
+    assemble_voiceover,
+    generate_voiceover,
+)
 from demo_vid_mcp.server import mcp
 
 logger = logging.getLogger("demo-vid-mcp.tools.generate")
@@ -331,8 +336,10 @@ async def demo_vid_generate(
     # each narrated step is stretched to narration + pad before the browser
     # ever opens, so the capture advances on end-of-speech, not on a guess.
     # Music/sfx still overlap with recording (music gen can take minutes).
-    voice_result = await generate_voiceover(script, str(video_dir), config.speech_mcp_url)
-    stages["voiceover"] = voice_result
+    voice_speed = float(script.get("voice_speed") or 1.0)
+    voice_result = await generate_voiceover(
+        script, str(video_dir), config.speech_mcp_url, speed=voice_speed
+    )
 
     voice_durations = voice_result.get("segment_durations") or []
     say_count = sum(1 for s in script.get("steps", []) if (s.get("say") or "").strip())
@@ -358,6 +365,12 @@ async def demo_vid_generate(
             stages["voiceover"]["alignment"] = align
             # Persist the aligned script - what was actually recorded.
             script_path.write_text(yaml.dump(script, default_flow_style=False), encoding="utf-8")
+
+    # Layout happens AFTER alignment: the gaps between segments are derived
+    # from the final page waits, so the audio track and the picture share one
+    # timeline instead of drifting apart on a fixed inter-segment silence.
+    voice_result = assemble_voiceover(voice_result, script, str(video_dir), min_gap=PAGE_GAP_S)
+    stages["voiceover"] = voice_result
 
     # resolve_all_sfx is a no-op (returns [] immediately, no network calls)
     # when the script has no `action: sfx` steps, so this is always safe to
@@ -400,6 +413,19 @@ async def demo_vid_generate(
     sfx_results = await sfx_task
     if sfx_results:
         stages["sfx"] = {"success": True, "count": len(sfx_results)}
+    else:
+        stages["sfx"] = {
+            "success": True,
+            "count": 0,
+            "reason": "no `action: sfx` steps in the script, so nothing was requested",
+        }
+    stages["vfx"] = {
+        "success": True,
+        "transitions": bool(record_result.get("transitions")),
+        "style": record_result.get("transition_style") or "cut",
+        "reason": record_result.get("transition_note")
+        or ("plain cuts" if not record_result.get("transitions") else ""),
+    }
 
     if not record_result["success"]:
         return {

@@ -208,8 +208,12 @@ async def record(script: dict, output_dir: str, theme: str = "dark") -> dict:
             }
         clips = [str(webms[0])]
 
+    used_transitions = False
+    transition_style = "cut"
+    transition_note = "single page-visit clip, nothing to transition"
     if len(clips) > 1:
         transition = script.get("transition_style", DEFAULT_TRANSITION)
+        transition_style = transition
         stitch_result = await stitch_clips(
             clips, output_dir, config.vfx_mcp_url, transition=transition
         )
@@ -219,6 +223,15 @@ async def record(script: dict, output_dir: str, theme: str = "dark") -> dict:
                 "error": stitch_result["error"],
                 "suggestions": ["Check FFmpeg is installed - required even without vfx-mcp"],
             }
+        used_transitions = bool(stitch_result.get("used_transitions"))
+        transition_note = (
+            ""
+            if used_transitions
+            else (
+                f"vfx-mcp not reachable at {config.vfx_mcp_url or '(unset)'} "
+                f"or the {transition} call failed; clips were hard-cut"
+            )
+        )
         logger.info(
             "Stitched %d clips (transitions=%s)", len(clips), stitch_result["used_transitions"]
         )
@@ -231,4 +244,11 @@ async def record(script: dict, output_dir: str, theme: str = "dark") -> dict:
 
     size_kb = output.stat().st_size // 1024
     logger.info("Recording complete: %s (%d KB)", output.name, size_kb)
-    return {"success": True, "video_path": str(output), "message": "Recording complete"}
+    return {
+        "success": True,
+        "video_path": str(output),
+        "message": "Recording complete",
+        "transitions": used_transitions,
+        "transition_style": transition_style,
+        "transition_note": transition_note,
+    }

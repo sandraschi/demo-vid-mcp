@@ -1,5 +1,27 @@
 # Changelog
 
+## Unreleased (2026-10-20, voice sync)
+
+The japanophile tour showed the voice running ahead of the picture. Root cause was structural,
+not a tuning error: page boundaries advance on cumulative `wait` values, while the voiceover was
+concatenated with a fixed 0.8 s gap. Every page whose authored wait was longer than its line
+pushed the next line earlier, and the error accumulated - SRT cue 2 claimed 10.1 s while the
+audio reached it at about 7.1 s.
+
+- `narration_timeline()` places each segment at its page's cumulative wait (hold steps included);
+  `assemble_voiceover()` builds the track by absolute placement and reports `overrun` instead of
+  quietly shifting every later line.
+- `PAGE_GAP_S = 2.0` replaces the paired 0.8 s constants. It is both the minimum tail after a
+  line and the pad `align_script_waits` adds, so a page always holds 2 s past end-of-speech.
+- `voice_speed` (script key) slows TTS with FFmpeg `atempo` (pitch preserved), then re-measures
+  the segments so waits are aligned from the slowed durations. Verified against speech-mcp:
+  1.0x gave 2.44/2.27 s, 0.75x gave 3.22/2.99 s (ratio 1.318 against 1.333 expected), and the
+  assembled track was 13.20 s for 13.20 s of picture with zero overrun.
+- Recorder returns `transitions`, `transition_style` and `transition_note`; `stages.vfx` and
+  `stages.sfx` now state whether anything actually ran. On japanophile, vfx-mcp was not running
+  on 11122 and the script had no `action: sfx` steps, so hard cuts and silence were correct
+  behaviour for that run, not a rendering bug.
+
 ## 0.4.0 (2026-09-11)
 
 - **Real background music**: `pipeline/music.py` generates ambient tracks via songgeneration-mcp
