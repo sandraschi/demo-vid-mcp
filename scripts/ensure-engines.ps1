@@ -50,5 +50,15 @@ foreach ($engine in $engines) {
 if (Test-Port 10909) { Write-Output 'speech-mcp: listening on 10909' }
 else { Write-Output 'speech-mcp: DOWN on 10909 - voiceover will fail'; $failed++ }
 
+# sfx-mcp needs FREESOUND_API_KEY for anything to resolve; report it here so a
+# silent "0 effects" is never a mystery.
+try {
+    $health = Invoke-RestMethod 'http://127.0.0.1:11120/api/health' -TimeoutSec 3
+    $keyState = if ($health.has_api_key) { 'configured' } else { 'MISSING - sfx steps will be skipped' }
+    Write-Output ("sfx-mcp FREESOUND_API_KEY: {0}" -f $keyState)
+} catch {
+    Write-Output 'sfx-mcp: HTTP API not reachable on 11120 (MCP endpoint is /mcp/ with a trailing slash)'
+}
+
 if ($failed -gt 0) { exit 1 }
 exit 0
