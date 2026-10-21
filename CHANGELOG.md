@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased (2026-10-21, local audio engine)
+
+- `music_enabled` / `music_prompt` are optional overrides now. They defaulted to `False` and
+  the default prompt and were applied unconditionally, so a saved script's `bg_music: true`
+  and `music_prompt` were silently discarded; `/api/generate` also sent `music_enabled=False`
+  whenever the caller omitted it. Both fixed, and `voice` no longer forces "heart" over a
+  script. This is why the first local-engine run produced no music despite the flag.
+- End-to-end run against the local Stable Audio service (11250): 283 s bed built from three
+  110 s windows joined with a 3 s crossfade, two generated effects, sync gate **PASS** at
+  +0.121 s worst drift. The 1.5 s gap at 11 s measured -42.4 dB mean with music, against
+  -91 dB (digital silence) in the previous run.
+
 ## Unreleased (2026-10-20, voice sync)
 
 The japanophile tour showed the voice running ahead of the picture. Root cause was structural,

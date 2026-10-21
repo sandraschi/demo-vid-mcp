@@ -214,16 +214,16 @@ async def demo_vid_generate(
         str, Field(description="speech-mcp voice: 'heart', 'sky', or 'adam'.")
     ] = "heart",
     music_enabled: Annotated[
-        bool,
+        bool | None,
         Field(
             description="Generate and mix in ambient background music via songgeneration-mcp, "
-            "ducked under the voiceover. Requires SONGGENERATION_MCP_URL configured."
+            "ducked under the voiceover. Leave unset to honour the script's own bg_music."
         ),
-    ] = False,
+    ] = None,
     music_prompt: Annotated[
-        str,
+        str | None,
         Field(description="Text prompt describing the background music's mood/style."),
-    ] = DEFAULT_MUSIC_PROMPT,
+    ] = None,
     ctx: Context | None = None,
 ) -> dict:
     """Generate a demo video for a fleet repo.
@@ -294,7 +294,11 @@ async def demo_vid_generate(
         script["resolution"] = resolution
     if voice:
         script["voice"] = voice
-    script["bg_music"] = music_enabled
+    # Only override what the caller actually specified. A saved script carries
+    # bg_music/music_prompt/voice of its own; forcing the tool defaults here
+    # silently disabled music for every script that asked for it.
+    if music_enabled is not None:
+        script["bg_music"] = music_enabled
     if music_prompt:
         script["music_prompt"] = music_prompt
 

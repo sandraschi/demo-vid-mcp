@@ -209,7 +209,6 @@ async def music_preview(body: dict):
 
 @app.post("/api/generate")
 async def api_generate(body: dict):
-    from demo_vid_mcp.pipeline.music import DEFAULT_MUSIC_PROMPT
     from demo_vid_mcp.tools.generate import demo_vid_generate
 
     repo = body.get("repo", "").strip()
@@ -220,9 +219,11 @@ async def api_generate(body: dict):
         repo=repo,
         script_yaml=body.get("script_yaml"),
         page_config=body.get("page_config"),
-        voice=body.get("voice", "heart"),
-        music_enabled=bool(body.get("music_enabled", False)),
-        music_prompt=body.get("music_prompt") or DEFAULT_MUSIC_PROMPT,
+        voice=body.get("voice"),
+        music_enabled=None
+        if body.get("music_enabled") is None
+        else bool(body.get("music_enabled")),
+        music_prompt=body.get("music_prompt"),
     )
     return result
 
