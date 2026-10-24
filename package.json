@@ -1,9 +1,9 @@
 {
-  "name": "demo-vid-mcp",
-  "version": "0.1.0",
-  "private": true,
-  "type": "commonjs",
-  "dependencies": {
-    "@playwright/test": "^1.62.0"
-  }
+	"name": "demo-vid-mcp",
+	"version": "0.1.0",
+	"private": true,
+	"type": "commonjs",
+	"dependencies": {
+		"@playwright/test": "^1.62.0"
+	}
 }
