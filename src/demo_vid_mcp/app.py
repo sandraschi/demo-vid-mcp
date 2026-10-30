@@ -219,7 +219,7 @@ async def api_generate(body: dict):
         repo=repo,
         script_yaml=body.get("script_yaml"),
         page_config=body.get("page_config"),
-        voice=body.get("voice"),
+        voice=body.get("voice") or "heart",
         music_enabled=None
         if body.get("music_enabled") is None
         else bool(body.get("music_enabled")),
