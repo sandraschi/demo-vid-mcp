@@ -15,6 +15,10 @@ jobs:
         with:
           version: latest
           enable-cache: true
+          # Pin the interpreter: uv otherwise takes the newest on the
+          # runner (3.15), which the pinned fastmcp does not support
+          # (typing.no_type_check_decorator). Matches requires-python.
+          python-version: "3.13"
       - run: uv sync --group dev
       - run: uv run ruff check src
       - run: uv run ruff format --check src
